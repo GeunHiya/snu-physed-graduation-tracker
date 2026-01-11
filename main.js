@@ -10,7 +10,7 @@ const Footer = ({ onOpenContact }) => {
                 </h4>
                 
                 <div className="flex items-center gap-2 text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">
-                    <span>v1.0.4</span>
+                    <span>v1.0.0</span>
                     <span className="w-1 h-1 bg-indigo-300 rounded-full"></span>
                     <span>Stable</span>
                 </div>
