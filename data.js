@@ -84,7 +84,15 @@ window.getGeneralDataByYear = (year) => {
     const computer_23_24 = [{ id: 'g_comp', name: '선택', type: 'computer', prefix: '컴퓨터', options: COMPUTER_OPTIONS, completed: false, credits: 3, fixed: true, lockCredits: true, lockDelete: true }];
     const keys_25_later = [{ id: 'g_key1', name: '', type: 'keys', prefix: '지성의 열쇠 1', completed: false, credits: 3, fixed: true, lockCredits: true, lockDelete: true }, { id: 'g_key2', name: '', type: 'keys', prefix: '지성의 열쇠 2', completed: false, credits: 3, fixed: true, lockCredits: true, lockDelete: true }, { id: 'g_key3', name: '', type: 'keys', prefix: '지성의 열쇠 3', completed: false, credits: 3, fixed: true, lockCredits: true, lockDelete: true }];
     const veritas_25_later = [{ id: 'g_veritas', name: '', type: 'veritas', prefix: '베리타스', options: VERITAS_OPTIONS, completed: false, credits: 3, fixed: true, lockCredits: true, lockDelete: true }];
-    const core = [{ id: 'g_c1', name: '', type: 'core', prefix: '언어와 문학', options: ["언어와 문학", "문화와 예술"], completed: false, credits: 3, fixed: true, lockCredits: true, lockDelete: true, recommendedSupport: true, isRecommended: false }, { id: 'g_c2', name: '', type: 'coreFixed', prefix: '역사와 철학', completed: false, credits: 3, fixed: true, lockCredits: true, lockDelete: true, recommendedSupport: true, isRecommended: false }, { id: 'g_c3', name: '', type: 'core', prefix: '정치와 경제', options: ["정치와 경제", "인간과 사회"], completed: false, credits: 3, fixed: true, lockCredits: true, lockDelete: true }, { id: 'g_c4', name: '', type: 'core', prefix: '자연과 기술', options: ["자연과 기술", "생명과 환경"], completed: false, credits: 3, fixed: true, lockCredits: true, lockDelete: true }];
+    
+    // [수정] 역사와 철학(g_c2)을 'coreFixed' -> 'core'로 변경하고 options 추가
+    const core = [
+        { id: 'g_c1', name: '', type: 'core', prefix: '언어와 문학', options: ["언어와 문학", "문화와 예술"], completed: false, credits: 3, fixed: true, lockCredits: true, lockDelete: true, recommendedSupport: true, isRecommended: false },
+        { id: 'g_c2', name: '', type: 'core', prefix: '역사와 철학', options: ["역사와 철학"], completed: false, credits: 3, fixed: true, lockCredits: true, lockDelete: true, recommendedSupport: true, isRecommended: false },
+        { id: 'g_c3', name: '', type: 'core', prefix: '정치와 경제', options: ["정치와 경제", "인간과 사회"], completed: false, credits: 3, fixed: true, lockCredits: true, lockDelete: true },
+        { id: 'g_c4', name: '', type: 'core', prefix: '자연과 기술', options: ["자연과 기술", "생명과 환경"], completed: false, credits: 3, fixed: true, lockCredits: true, lockDelete: true }
+    ];
+    
     const pe_common = [{ id: 'g_pe1', name: '', type: 'pe', prefix: '체육 1', completed: false, credits: 1, fixed: true, lockCredits: true, lockDelete: true }, { id: 'g_pe2', name: '', type: 'pe', prefix: '체육 2', completed: false, credits: 1, fixed: true, lockCredits: true, lockDelete: true }];
     const pe_25_later = [{ id: 'g_pe', name: '', type: 'pe', prefix: '체육', completed: false, credits: 1, fixed: true, lockCredits: true, fixedName: true, lockDelete: true }];
 
