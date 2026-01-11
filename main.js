@@ -10,7 +10,7 @@ const Footer = ({ onOpenContact }) => {
                 </h4>
                 
                 <div className="flex items-center gap-2 text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">
-                    <span>v1.0.0</span>
+                    <span>v1.0.5</span>
                     <span className="w-1 h-1 bg-indigo-300 rounded-full"></span>
                     <span>Stable</span>
                 </div>
@@ -50,24 +50,17 @@ const App = () => {
     const [loading, setLoading] = useState(true);
     const [config, setConfig] = useState(DEFAULT_CONFIG);
     const [data, setData] = useState(BASE_DATA);
-    
-    // [변수명 변경] 실제 연락처 이메일 (userEmail)
     const [userEmail, setUserEmail] = useState('');
-
     const [modal, setModal] = useState({ show: false, message: '', onConfirm: null, verificationWord: '', isDestructive: false });
     const [draggedItem, setDraggedItem] = useState(null);
     const [canDrag, setCanDrag] = useState(false);
     const [showBackToTop, setShowBackToTop] = useState(false);
-    
     const [editStage, setEditStage] = useState('none');
     const [showContact, setShowContact] = useState(false);
-
     const [verifyPassword, setVerifyPassword] = useState('');
     const [profileForm, setProfileForm] = useState({ name: '', email: '', newPw: '', confirmPw: '' });
     const [profileError, setProfileError] = useState('');
-
     const [newInputs, setNewInputs] = useState({ general: { name: '', credits: 3 }, teaching: { name: '', credits: 2 }, physics: { name: '', credits: 3 }, indEng: { name: '', credits: 3 }, shared: { name: '', credits: 3 }, etcGrad: { name: '', credits: 0 }, elective: { name: '', credits: 3 } });
-    
     const sectionRefs = { general: useRef(null), teaching: useRef(null), physics: useRef(null), indEng: useRef(null), shared: useRef(null), etcGrad: useRef(null), elective: useRef(null), header: useRef(null) };
 
     useEffect(() => {
@@ -77,41 +70,19 @@ const App = () => {
                     const docSnap = await db.collection("users").doc(currentUser.uid).get();
                     if (docSnap.exists) {
                         const savedData = docSnap.data();
-                        
-                        // [수정] DB에서 실제 이메일 로드
                         setUserEmail(savedData.email || "");
-
                         let loadedConfig = savedData.config || DEFAULT_CONFIG;
                         let configChanged = false;
-
-                        // [수정] 학번(studentId) 정보를 config에 포함
-                        if (savedData.studentId) {
-                            loadedConfig = { ...loadedConfig, studentId: savedData.studentId };
-                        }
-
-                        // [수정] 이메일 파싱 로직 제거 -> DB의 studentYear 사용
-                        if (savedData.studentYear && loadedConfig.studentYear !== savedData.studentYear) {
-                            loadedConfig = { ...loadedConfig, studentYear: savedData.studentYear };
-                            configChanged = true;
-                        }
-
-                        if (!loadedConfig.userName && savedData.userName) {
-                            loadedConfig = { ...loadedConfig, userName: savedData.userName };
-                            configChanged = true;
-                        }
-
-                        if (configChanged) {
-                            db.collection("users").doc(currentUser.uid).set({ config: loadedConfig }, { merge: true });
-                        }
-
+                        if (savedData.studentId) loadedConfig = { ...loadedConfig, studentId: savedData.studentId };
+                        if (savedData.studentYear && loadedConfig.studentYear !== savedData.studentYear) { loadedConfig = { ...loadedConfig, studentYear: savedData.studentYear }; configChanged = true; }
+                        if (!loadedConfig.userName && savedData.userName) { loadedConfig = { ...loadedConfig, userName: savedData.userName }; configChanged = true; }
+                        if (configChanged) db.collection("users").doc(currentUser.uid).set({ config: loadedConfig }, { merge: true });
                         setConfig(loadedConfig);
                         if (savedData.data) setData(savedData.data);
                     }
                 } catch (e) { console.error(e); }
                 setUser(currentUser);
-            } else {
-                setUser(null);
-            }
+            } else { setUser(null); }
             setLoading(false);
         });
         return () => unsubscribe();
@@ -119,9 +90,7 @@ const App = () => {
 
     useEffect(() => {
         if (user && !loading) {
-            const timer = setTimeout(() => {
-                db.collection("users").doc(user.uid).set({ config, data }, { merge: true });
-            }, 1000);
+            const timer = setTimeout(() => { db.collection("users").doc(user.uid).set({ config, data }, { merge: true }); }, 1000);
             return () => clearTimeout(timer);
         }
     }, [config, data, user, loading]);
@@ -131,8 +100,8 @@ const App = () => {
         const teachItems = getTeachingDataByYear(config.studentYear);
         setData(prev => {
             const next = { ...prev };
-            if (genItems.length > 0 && prev.general.items.length === 0) next.general = { ...next.general, items: genItems };
-            if (teachItems.length > 0 && prev.teaching.items.length === 0) next.teaching = { ...next.teaching, items: teachItems };
+            if (genItems.length > 0 && (!prev.general.items || prev.general.items.length === 0)) next.general = { ...next.general, items: genItems };
+            if (teachItems.length > 0 && (!prev.teaching.items || prev.teaching.items.length === 0)) next.teaching = { ...next.teaching, items: teachItems };
             return next;
         });
     }, [config.studentYear]);
@@ -219,7 +188,6 @@ const App = () => {
     const handleSubjectSelect = (ck, id, selectedName) => { const option = PHYSICS_ED_CHOICES.find(o => o.name === selectedName); setData(prev => ({ ...prev, [ck]: { ...prev[ck], items: prev[ck].items.map(i => i.id === id ? { ...i, name: option.name, credits: option.credits } : i) } })); };
     const getForeign2Options = () => { const f1 = data.general.items.find(i => i.type === 'foreign1'); if (!f1) return []; const val = f1.subName; if (val === '대학영어 1') return ['대학영어 2', '고급영어', '제2외국어']; if (val === '대학영어 2') return ['고급영어', '제2외국어']; if (val === '고급영어' || val === '면제') return ['제2외국어']; return ['대학영어 1', '대학영어 2', '고급영어', '제2외국어', '면제']; };
     
-    // 섹션별 초기화 핸들러
     const handleSectionReset = (sectionKey) => {
         const sectionName = data[sectionKey].title;
         setModal({
@@ -231,16 +199,12 @@ const App = () => {
                 setData(prev => {
                     const next = { ...prev };
                     let resetItems = [];
-
-                    if (sectionKey === 'general') {
-                        resetItems = getGeneralDataByYear(config.studentYear);
-                    } else if (sectionKey === 'teaching') {
-                        resetItems = getTeachingDataByYear(config.studentYear);
-                    } else {
+                    if (sectionKey === 'general') resetItems = getGeneralDataByYear(config.studentYear);
+                    else if (sectionKey === 'teaching') resetItems = getTeachingDataByYear(config.studentYear);
+                    else {
                         const baseDataCopy = JSON.parse(JSON.stringify(BASE_DATA));
                         resetItems = baseDataCopy[sectionKey].items || [];
                     }
-
                     next[sectionKey] = { ...next[sectionKey], items: resetItems };
                     return next;
                 });
@@ -262,7 +226,6 @@ const App = () => {
                 const teachItems = getTeachingDataByYear(config.studentYear);
                 if (genItems.length > 0) freshData.general.items = genItems;
                 if (teachItems.length > 0) freshData.teaching.items = teachItems;
-
                 setData(freshData);
                 await db.collection("users").doc(user.uid).update({ data: freshData });
                 setModal({ show: false, message: '', verificationWord: '' });
@@ -271,7 +234,6 @@ const App = () => {
         });
     };
 
-    // [수정된 회원 탈퇴 함수]
     const handleDeleteAccount = () => {
         setModal({
             show: true,
@@ -282,25 +244,12 @@ const App = () => {
                 try {
                     const currentUser = auth.currentUser;
                     if (!currentUser) { alert("로그인 정보가 유효하지 않습니다."); return; }
-                    
-                    // 1. 내 정보에서 학번 가져오기
                     const userDoc = await db.collection("users").doc(currentUser.uid).get();
                     const studentId = userDoc.exists ? userDoc.data().studentId : null;
-
-                    // 2. Batch로 한번에 삭제 (users + public_users)
                     const batch = db.batch();
-                    
-                    // (1) 개인정보 삭제
                     batch.delete(db.collection("users").doc(currentUser.uid));
-
-                    // (2) 학번 예약 내역 삭제 (중요: 이걸 지워야 재가입 가능)
-                    if (studentId) {
-                        batch.delete(db.collection("public_users").doc(studentId));
-                    }
-
+                    if (studentId) batch.delete(db.collection("public_users").doc(studentId));
                     await batch.commit();
-
-                    // 3. 계정 삭제
                     await currentUser.delete();
                     setModal({ show: false, message: '', verificationWord: '' });
                 } catch (error) {
@@ -315,24 +264,12 @@ const App = () => {
         });
     };
 
-    // 문의 제출 핸들러 (수정됨: 실제 이메일 userEmail 사용)
     const handleInquirySubmit = async (messageContent) => {
         try {
             const emailBody = {
                 subject: `[서울대 물리교육 졸업관리] ${config.userName}님의 새로운 문의입니다.`,
-                html: `
-                    <h2>새로운 문의/민원이 접수되었습니다.</h2>
-                    <p><strong>보낸 사람:</strong> ${config.userName} (${config.studentId || user.email.split('@')[0]})</p>
-                    <p><strong>연락처 이메일:</strong> ${userEmail}</p>
-                    
-                    <hr/>
-                    <h3>문의 내용:</h3>
-                    <p style="white-space: pre-wrap;">${messageContent}</p>
-                    <br/>
-                    <p style="font-size: 12px; color: #888;">이 메일은 Firebase Trigger Email 확장을 통해 자동 발송되었습니다.</p>
-                `
+                html: `<h2>새로운 문의/민원이 접수되었습니다.</h2><p><strong>보낸 사람:</strong> ${config.userName} (${config.studentId || user.email.split('@')[0]})</p><p><strong>연락처 이메일:</strong> ${userEmail}</p><hr/><h3>문의 내용:</h3><p style="white-space: pre-wrap;">${messageContent}</p><br/><p style="font-size: 12px; color: #888;">이 메일은 Firebase Trigger Email 확장을 통해 자동 발송되었습니다.</p>`
             };
-
             await db.collection('inquiries').add({
                 to: ['rmsguddi@snu.ac.kr'], 
                 message: emailBody,         
@@ -340,7 +277,6 @@ const App = () => {
                 userId: user.uid,           
                 rawMessage: messageContent  
             });
-
             alert("문의가 성공적으로 접수되었습니다.\n관리자 메일로 전송되었습니다.");
             setShowContact(false);
         } catch (error) {
@@ -353,7 +289,6 @@ const App = () => {
         setEditStage('verify');
         setVerifyPassword('');
         setProfileError('');
-        // [수정] 프로필 수정 폼에 userEmail 사용
         setProfileForm({ name: config.userName, email: userEmail, newPw: '', confirmPw: '' });
     };
 
@@ -363,9 +298,7 @@ const App = () => {
             const credential = firebase.auth.EmailAuthProvider.credential(user.email, verifyPassword);
             await user.reauthenticateWithCredential(credential);
             setEditStage('form');
-        } catch (error) {
-            setProfileError("비밀번호가 일치하지 않습니다.");
-        }
+        } catch (error) { setProfileError("비밀번호가 일치하지 않습니다."); }
     };
 
     const onUpdateProfile = async () => {
@@ -376,34 +309,32 @@ const App = () => {
                 if (profileForm.newPw.length < 6) throw new Error("새 비밀번호는 6자리 이상이어야 합니다.");
                 if (profileForm.newPw !== profileForm.confirmPw) throw new Error("새 비밀번호가 서로 일치하지 않습니다.");
             }
-
             if (profileForm.name !== config.userName) {
-                await db.collection("users").doc(user.uid).update({ 
-                    userName: profileForm.name,
-                    'config.userName': profileForm.name
-                });
+                await db.collection("users").doc(user.uid).update({ userName: profileForm.name, 'config.userName': profileForm.name });
                 setConfig(prev => ({ ...prev, userName: profileForm.name }));
             }
-
-            if (profileForm.newPw) {
-                await user.updatePassword(profileForm.newPw);
-            }
-
+            if (profileForm.newPw) await user.updatePassword(profileForm.newPw);
             if (profileForm.email !== userEmail) {
                 await db.collection("users").doc(user.uid).update({ email: profileForm.email });
                 setUserEmail(profileForm.email);
             }
-
             alert("개인정보가 성공적으로 수정되었습니다.");
             setEditStage('none');
-
         } catch (error) {
             if (error.code === 'auth/requires-recent-login') {
                 alert("보안상 민감한 정보 변경을 위해 다시 로그인이 필요합니다.");
                 await auth.signOut();
-            } else {
-                setProfileError(error.message);
-            }
+            } else { setProfileError(error.message); }
+        }
+    };
+
+    // [수정] PDF 다운로드는 PdfGenerator.js의 함수를 사용
+    const handleDownloadPDF = () => {
+        if (window.downloadPDF) {
+            // PDFTemplate이 렌더링된 요소의 ID는 'pdf-template'입니다.
+            window.downloadPDF('pdf-template', `${config.studentId}_${config.userName}_졸업이수현황.pdf`);
+        } else {
+            alert("PDF 생성 모듈을 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
         }
     };
 
@@ -452,6 +383,7 @@ const App = () => {
                 onReset={handleResetData}
                 onDeleteAccount={handleDeleteAccount}
                 onOpenEditProfile={openEditProfile}
+                onDownloadPDF={handleDownloadPDF} 
                 sectionRef={sectionRefs.header}
             />
 
@@ -485,6 +417,9 @@ const App = () => {
             <Footer onOpenContact={() => setShowContact(true)} />
 
             <button onClick={() => scrollToSection('top')} className={`fixed bottom-8 right-8 p-4 bg-indigo-600 text-white rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95 z-[100] ${showBackToTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`} title="맨 위로"><Icons.ArrowUp /></button>
+
+            {/* [수정] PdfGenerator.js에서 정의한 컴포넌트 사용 */}
+            {window.PDFTemplate && <window.PDFTemplate data={data} config={config} stats={stats} id="pdf-template" />}
         </div>
     );
 };

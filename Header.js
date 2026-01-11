@@ -1,4 +1,4 @@
-window.Header = ({ user, config, setConfig, stats, onLogout, onReset, onDeleteAccount, onOpenEditProfile, sectionRef }) => {
+window.Header = ({ user, config, setConfig, stats, onLogout, onReset, onDeleteAccount, onOpenEditProfile, onDownloadPDF, sectionRef }) => {
     const { useState, useRef, useEffect } = React;
     const [showUserMenu, setShowUserMenu] = useState(false);
     const userMenuRef = useRef(null);
@@ -44,6 +44,12 @@ window.Header = ({ user, config, setConfig, stats, onLogout, onReset, onDeleteAc
 
                     {showUserMenu && (
                         <div className="absolute top-full left-0 mt-2 w-full min-w-[180px] bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50 flex flex-col animation-fade-in">
+                            {/* [신규] PDF 저장 버튼 (최상단) */}
+                            <button onClick={() => handleMenuClick(onDownloadPDF)} className="px-4 py-3 text-left text-sm text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors font-bold border-b border-slate-50 flex items-center gap-2">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                PDF 저장 (A4)
+                            </button>
+                            
                             <button onClick={() => handleMenuClick(onOpenEditProfile)} className="px-4 py-3 text-left text-sm text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors font-bold border-b border-slate-50 flex items-center gap-2">
                                 <Icons.Settings /> 개인정보 수정
                             </button>
@@ -58,7 +64,6 @@ window.Header = ({ user, config, setConfig, stats, onLogout, onReset, onDeleteAc
                 </div>
 
                 {/* 컨트롤 패널 (오른쪽: 전공선택 + 로그아웃) */}
-                {/* [수정] md:w-auto -> md:flex-1 로 변경하여 남은 공간을 꽉 채우게 함 */}
                 <div className="flex items-center justify-between w-full md:flex-1 gap-3">
                     <div className="flex flex-col gap-1 flex-1 md:flex-none">
                         <label className="text-[9px] md:text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1 hidden md:block">Major Path</label>
@@ -76,7 +81,6 @@ window.Header = ({ user, config, setConfig, stats, onLogout, onReset, onDeleteAc
                         </div>
                     )}
                     
-                    {/* [수정] 로그아웃 버튼을 flex 컨테이너의 끝으로 밀어냄 */}
                     <button onClick={onLogout} className="ml-auto flex items-center gap-1 md:gap-2 bg-slate-100 text-slate-500 px-4 py-2 md:px-6 md:py-3 rounded-2xl md:rounded-3xl text-xs md:text-sm font-bold hover:bg-slate-200 active:scale-95 transition-all shadow-sm h-full mt-0 md:mt-4"><Icons.Logout /> 로그아웃</button>
                 </div>
             </div>
