@@ -110,8 +110,22 @@ window.AuthScreen = ({ onLoginSuccess }) => {
                 const emailCheckQuery = await db.collection("public_users").where("email", "==", userEmail).get();
                 if (!emailCheckQuery.empty) throw new Error("이미 가입된 이메일입니다.");
 
+                // 계정 생성
                 const userCred = await auth.createUserWithEmailAndPassword(userEmail, pw);
                 let derivedYear = parseInt(studentId.substring(2, 4));
+
+                // [핵심 변경] 가입 시점에 학번에 맞는 데이터 미리 생성!
+                const initialData = JSON.parse(JSON.stringify(BASE_DATA)); // 빈 데이터 복사
+                
+                // 학번에 맞는 교양/교직 데이터 채워넣기
+                if (window.getGeneralDataByYear) {
+                    const genItems = window.getGeneralDataByYear(derivedYear);
+                    if (genItems.length > 0) initialData.general.items = genItems;
+                }
+                if (window.getTeachingDataByYear) {
+                    const teachItems = window.getTeachingDataByYear(derivedYear);
+                    if (teachItems.length > 0) initialData.teaching.items = teachItems;
+                }
 
                 const batch = db.batch();
                 const userRef = db.collection("users").doc(userCred.user.uid);
@@ -122,7 +136,7 @@ window.AuthScreen = ({ onLoginSuccess }) => {
                     studentYear: derivedYear,
                     majorPath: "single",
                     config: { userName: name, studentYear: derivedYear, majorPath: "single", secondMajorTitle: "" },
-                    data: BASE_DATA 
+                    data: initialData // [중요] 꽉 찬 데이터로 저장
                 }, { merge: true });
 
                 const publicRef = db.collection("public_users").doc(studentId);
@@ -138,16 +152,13 @@ window.AuthScreen = ({ onLoginSuccess }) => {
 
                 const publicDoc = await db.collection("public_users").doc(studentId).get();
                 
-                // [수정] 학번이 없으면 -> 공통 에러 메시지(LOGIN_FAIL)를 던져서 catch에서 잡게 함
                 if (!publicDoc.exists) {
-                    // 구버전 호환 시도
                     try {
                         const legacyFakeEmail = `${studentId}@snu.grad.test`;
                         await auth.signInWithEmailAndPassword(legacyFakeEmail, pw);
                         onLoginSuccess();
                         return;
                     } catch (e) {
-                        // 구버전도 실패하면 -> 로그인 실패로 처리
                         throw new Error("LOGIN_FAIL");
                     }
                 }
@@ -160,13 +171,11 @@ window.AuthScreen = ({ onLoginSuccess }) => {
         } catch (err) {
             let msg = "오류 발생";
             
-            // [핵심 수정] 로그인 관련 에러들을 모두 하나로 통일
             if (err.message === "LOGIN_FAIL" || 
                 err.code === 'auth/user-not-found' || 
                 err.code === 'auth/wrong-password' || 
-                err.code === 'auth/invalid-login-credentials' || // 아까 떴던 영어 에러
+                err.code === 'auth/invalid-login-credentials' || 
                 err.code === 'auth/invalid-credential') {
-                
                 msg = "학번 또는 비밀번호를 확인해주세요.";
             } 
             else if (err.code === 'permission-denied') msg = "보안 오류: 접근 권한이 없습니다.";
