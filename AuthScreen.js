@@ -14,21 +14,18 @@ window.AuthScreen = ({ onLoginSuccess }) => {
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // [신규] 실시간 유효성 검사 에러 상태 (입력창 별)
+    // 실시간 유효성 검사 에러 상태
     const [idError, setIdError] = useState("");
     const [emailError, setEmailError] = useState("");
     const [pwError, setPwError] = useState("");
 
     // ----------------------------------------------------------------
-    // 1. 실시간 검사 함수들 (onBlur 이벤트 핸들러)
+    // 1. 실시간 검사 함수들 (onBlur)
     // ----------------------------------------------------------------
-
-    // 1-1. 학번 중복 및 형식 검사
     const handleIdBlur = async () => {
         if (!studentId) return;
-        setIdError(""); // 초기화
+        setIdError(""); 
 
-        // 형식 검사
         const idRegex = /^\d{4}-\d{5}$/;
         if (!idRegex.test(studentId)) {
             setIdError("학번 형식이 올바르지 않습니다. (예: 2024-12345)");
@@ -40,44 +37,33 @@ window.AuthScreen = ({ onLoginSuccess }) => {
             return;
         }
 
-        // 중복 검사 (회원가입 모드일 때만)
         if (view === 'register') {
             try {
                 const doc = await db.collection("public_users").doc(studentId).get();
                 if (doc.exists) {
                     setIdError("이미 가입된 학번입니다.");
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
     };
 
-    // 1-2. 이메일 중복 및 형식 검사
     const handleEmailBlur = async () => {
         if (!userEmail) return;
         setEmailError("");
-
         if (!userEmail.includes('@')) {
             setEmailError("유효한 이메일 형식이 아닙니다.");
             return;
         }
-
-        // 중복 검사 (회원가입 모드일 때만)
         if (view === 'register') {
             try {
-                // public_users 컬렉션에서 해당 이메일을 가진 문서가 있는지 검색
                 const query = await db.collection("public_users").where("email", "==", userEmail).get();
                 if (!query.empty) {
                     setEmailError("이미 가입된 이메일입니다.");
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
     };
 
-    // 1-3. 비밀번호 길이 검사
     const handlePwBlur = () => {
         if (!pw) return;
         setPwError("");
@@ -87,28 +73,22 @@ window.AuthScreen = ({ onLoginSuccess }) => {
     };
 
     // ----------------------------------------------------------------
-    // 2. 최종 제출 처리 (기존 로직 유지 + 안전장치)
+    // 2. 최종 제출 처리
     // ----------------------------------------------------------------
     const handleAuth = async (e) => {
         e.preventDefault();
         setError("");
         setMessage("");
 
-        // [안전장치] 빨간색 에러가 하나라도 떠 있다면 제출 막기
-        if (idError || emailError || pwError) {
-            return; 
-        }
+        if (idError || emailError || pwError) return; 
 
         setLoading(true);
 
         try {
-            // --- 최종 유효성 검사 (입력 안하고 바로 버튼 누른 경우 대비) ---
             const idRegex = /^\d{4}-\d{5}$/;
             if (!idRegex.test(studentId)) throw new Error("학번 형식이 올바르지 않습니다.");
             
-            // ----------------------------------------------------
             // A. 비밀번호 재설정
-            // ----------------------------------------------------
             if (view === 'reset') {
                 if (!studentId || !userEmail) throw new Error("학번과 이메일을 입력해주세요.");
                 await auth.sendPasswordResetEmail(userEmail);
@@ -117,29 +97,23 @@ window.AuthScreen = ({ onLoginSuccess }) => {
                 return;
             }
 
-            // ----------------------------------------------------
             // B. 회원가입
-            // ----------------------------------------------------
             if (view === 'register') {
                 if (!name) throw new Error("이름을 입력해주세요.");
                 if (!userEmail.includes('@')) throw new Error("유효한 이메일을 입력해주세요.");
                 if (pw.length < 6) throw new Error("비밀번호는 6자리 이상이어야 합니다.");
                 if (pw !== confirmPw) throw new Error("비밀번호가 일치하지 않습니다.");
 
-                // 최종 중복 검사 (혹시 실시간 검사 놓쳤을 경우)
                 const idCheckDoc = await db.collection("public_users").doc(studentId).get();
                 if (idCheckDoc.exists) throw new Error("이미 가입된 학번입니다.");
                 
                 const emailCheckQuery = await db.collection("public_users").where("email", "==", userEmail).get();
                 if (!emailCheckQuery.empty) throw new Error("이미 가입된 이메일입니다.");
 
-                // 계정 생성
                 const userCred = await auth.createUserWithEmailAndPassword(userEmail, pw);
                 let derivedYear = parseInt(studentId.substring(2, 4));
 
-                // Batch 저장
                 const batch = db.batch();
-
                 const userRef = db.collection("users").doc(userCred.user.uid);
                 batch.set(userRef, {
                     userName: name,
@@ -152,33 +126,29 @@ window.AuthScreen = ({ onLoginSuccess }) => {
                 }, { merge: true });
 
                 const publicRef = db.collection("public_users").doc(studentId);
-                batch.set(publicRef, { 
-                    email: userEmail,
-                    taken: true 
-                });
+                batch.set(publicRef, { email: userEmail, taken: true });
 
                 await batch.commit();
-                
                 alert("가입이 완료되었습니다.");
                 onLoginSuccess();
             } 
-            // ----------------------------------------------------
             // C. 로그인
-            // ----------------------------------------------------
             else {
                 if (!pw) throw new Error("비밀번호를 입력해주세요.");
 
                 const publicDoc = await db.collection("public_users").doc(studentId).get();
                 
+                // [수정] 학번이 없으면 -> 공통 에러 메시지(LOGIN_FAIL)를 던져서 catch에서 잡게 함
                 if (!publicDoc.exists) {
-                    // 구버전 호환
+                    // 구버전 호환 시도
                     try {
                         const legacyFakeEmail = `${studentId}@snu.grad.test`;
                         await auth.signInWithEmailAndPassword(legacyFakeEmail, pw);
                         onLoginSuccess();
                         return;
                     } catch (e) {
-                        throw new Error("가입되지 않은 학번입니다.");
+                        // 구버전도 실패하면 -> 로그인 실패로 처리
+                        throw new Error("LOGIN_FAIL");
                     }
                 }
 
@@ -189,12 +159,21 @@ window.AuthScreen = ({ onLoginSuccess }) => {
 
         } catch (err) {
             let msg = "오류 발생";
-            if (err.code === 'permission-denied') msg = "보안 오류: 접근 권한이 없습니다.";
+            
+            // [핵심 수정] 로그인 관련 에러들을 모두 하나로 통일
+            if (err.message === "LOGIN_FAIL" || 
+                err.code === 'auth/user-not-found' || 
+                err.code === 'auth/wrong-password' || 
+                err.code === 'auth/invalid-login-credentials' || // 아까 떴던 영어 에러
+                err.code === 'auth/invalid-credential') {
+                
+                msg = "학번 또는 비밀번호를 확인해주세요.";
+            } 
+            else if (err.code === 'permission-denied') msg = "보안 오류: 접근 권한이 없습니다.";
             else if (err.code === 'auth/email-already-in-use') msg = "이미 가입된 이메일입니다.";
-            else if (err.code === 'auth/wrong-password') msg = "비밀번호가 틀렸습니다.";
-            else if (err.code === 'auth/user-not-found') msg = "가입되지 않은 계정입니다.";
             else if (err.code === 'auth/invalid-email') msg = "이메일 형식이 올바르지 않습니다.";
             else msg = err.message;
+            
             setError(msg);
         } finally {
             setLoading(false);
@@ -207,11 +186,10 @@ window.AuthScreen = ({ onLoginSuccess }) => {
         return "졸업 관리 로그인";
     };
 
-    // 화면 전환 시 에러 초기화 헬퍼
     const switchView = (newView) => {
         setView(newView);
         setError(""); setMessage(""); 
-        setIdError(""); setEmailError(""); setPwError(""); // 개별 에러도 초기화
+        setIdError(""); setEmailError(""); setPwError("");
         setStudentId(""); setUserEmail(""); setPw(""); setName(""); setConfirmPw("");
     };
 
@@ -234,7 +212,7 @@ window.AuthScreen = ({ onLoginSuccess }) => {
 
                 <form onSubmit={handleAuth} className="space-y-4 font-bold">
                     
-                    {/* 학번 입력 (onBlur 추가됨) */}
+                    {/* 학번 */}
                     <div>
                         <label className="block text-xs text-slate-400 mb-1 ml-1">학번</label>
                         <div className="relative">
@@ -242,12 +220,11 @@ window.AuthScreen = ({ onLoginSuccess }) => {
                                 type="text" 
                                 value={studentId} 
                                 onChange={e=>setStudentId(e.target.value)} 
-                                onBlur={handleIdBlur} // [추가] 포커스 잃으면 검사
+                                onBlur={handleIdBlur} 
                                 className={`w-full p-4 rounded-2xl outline-none focus:ring-2 transition-colors ${idError ? 'bg-red-50 focus:ring-red-200' : 'bg-slate-50 focus:ring-indigo-100'}`} 
                                 placeholder="예: 2024-12345" 
                                 required 
                             />
-                            {/* 에러 메시지 또는 안내 문구 */}
                             {idError ? (
                                 <p className="text-[10px] text-red-500 mt-1 ml-1 font-black">{idError}</p>
                             ) : (
@@ -256,7 +233,7 @@ window.AuthScreen = ({ onLoginSuccess }) => {
                         </div>
                     </div>
 
-                    {/* 이메일 입력 (onBlur 추가됨) */}
+                    {/* 이메일 (회원가입/재설정만) */}
                     {(view === 'register' || view === 'reset') && (
                         <div>
                             <label className="block text-xs text-slate-400 mb-1 ml-1">이메일</label>
@@ -268,7 +245,7 @@ window.AuthScreen = ({ onLoginSuccess }) => {
                                     type="email" 
                                     value={userEmail} 
                                     onChange={e=>setUserEmail(e.target.value)} 
-                                    onBlur={handleEmailBlur} // [추가] 이메일 중복/형식 검사
+                                    onBlur={handleEmailBlur}
                                     className={`w-full p-4 pl-12 rounded-2xl outline-none focus:ring-2 transition-colors ${emailError ? 'bg-red-50 focus:ring-red-200' : 'bg-slate-50 focus:ring-indigo-100'}`} 
                                     placeholder="name@example.com" 
                                     required 
@@ -278,7 +255,7 @@ window.AuthScreen = ({ onLoginSuccess }) => {
                         </div>
                     )}
 
-                    {/* 이름 입력 */}
+                    {/* 이름 (회원가입만) */}
                     {view === 'register' && (
                         <div>
                             <label className="block text-xs text-slate-400 mb-1 ml-1">이름</label>
@@ -286,7 +263,7 @@ window.AuthScreen = ({ onLoginSuccess }) => {
                         </div>
                     )}
 
-                    {/* 비밀번호 입력 (onBlur 추가됨) */}
+                    {/* 비밀번호 (로그인/회원가입) */}
                     {view !== 'reset' && (
                         <div>
                             <label className="block text-xs text-slate-400 mb-1 ml-1">비밀번호</label>
@@ -294,7 +271,7 @@ window.AuthScreen = ({ onLoginSuccess }) => {
                                 type="password" 
                                 value={pw} 
                                 onChange={e=>setPw(e.target.value)} 
-                                onBlur={handlePwBlur} // [추가] 길이 검사
+                                onBlur={handlePwBlur}
                                 className={`w-full p-4 rounded-2xl outline-none focus:ring-2 transition-colors ${pwError ? 'bg-red-50 focus:ring-red-200' : 'bg-slate-50 focus:ring-indigo-100'}`} 
                                 placeholder="6자리 이상" 
                                 required 
@@ -303,7 +280,7 @@ window.AuthScreen = ({ onLoginSuccess }) => {
                         </div>
                     )}
 
-                    {/* 비밀번호 확인 */}
+                    {/* 비밀번호 확인 (회원가입만) */}
                     {view === 'register' && (
                         <div>
                             <label className="block text-xs text-slate-400 mb-1 ml-1">비밀번호 확인</label>
@@ -325,7 +302,6 @@ window.AuthScreen = ({ onLoginSuccess }) => {
                         </div>
                     )}
 
-                    {/* 제출 버튼 클릭 시 발생하는 최종 에러 메시지 (화면 하단) */}
                     {error && <div className="text-red-500 text-sm text-center font-black bg-red-50 p-2 rounded-lg">{error}</div>}
                     {message && <div className="text-green-600 text-sm text-center font-black bg-green-50 p-3 rounded-lg whitespace-pre-wrap leading-relaxed">{message}</div>}
 

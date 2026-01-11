@@ -10,7 +10,7 @@ const Footer = ({ onOpenContact }) => {
                 </h4>
                 
                 <div className="flex items-center gap-2 text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">
-                    <span>v1.0.3</span>
+                    <span>v1.0.4</span>
                     <span className="w-1 h-1 bg-indigo-300 rounded-full"></span>
                     <span>Stable</span>
                 </div>
@@ -271,6 +271,7 @@ const App = () => {
         });
     };
 
+    // [수정된 회원 탈퇴 함수]
     const handleDeleteAccount = () => {
         setModal({
             show: true,
@@ -281,7 +282,25 @@ const App = () => {
                 try {
                     const currentUser = auth.currentUser;
                     if (!currentUser) { alert("로그인 정보가 유효하지 않습니다."); return; }
-                    await db.collection("users").doc(currentUser.uid).delete();
+                    
+                    // 1. 내 정보에서 학번 가져오기
+                    const userDoc = await db.collection("users").doc(currentUser.uid).get();
+                    const studentId = userDoc.exists ? userDoc.data().studentId : null;
+
+                    // 2. Batch로 한번에 삭제 (users + public_users)
+                    const batch = db.batch();
+                    
+                    // (1) 개인정보 삭제
+                    batch.delete(db.collection("users").doc(currentUser.uid));
+
+                    // (2) 학번 예약 내역 삭제 (중요: 이걸 지워야 재가입 가능)
+                    if (studentId) {
+                        batch.delete(db.collection("public_users").doc(studentId));
+                    }
+
+                    await batch.commit();
+
+                    // 3. 계정 삭제
                     await currentUser.delete();
                     setModal({ show: false, message: '', verificationWord: '' });
                 } catch (error) {
