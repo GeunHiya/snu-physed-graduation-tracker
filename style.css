@@ -1,0 +1,38 @@
+/* 폰트 불러오기 */
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&display=swap');
+
+/* 기본 설정 */
+body {
+    font-family: 'Pretendard', sans-serif;
+    background-color: #f8fafc;
+    color: #1e293b;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+/* 숫자 입력 화살표 숨기기 */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* 커스텀 스크롤바 */
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+/* 그림자 및 애니메이션 */
+.card-shadow { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); }
+.list-item-transition { transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s ease; }
+.dragging { opacity: 0.5; background-color: #eef2ff !important; transform: scale(1.02); z-index: 50; }
+
+/* 밑줄 애니메이션 */
+.input-underline {
+    background-image: linear-gradient(to right, #4f46e5, #4f46e5);
+    background-position: bottom left;
+    background-repeat: no-repeat;
+    background-size: 0% 2px;
+    transition: background-size 0.3s ease;
+}
+.input-underline:focus { background-size: 100% 2px; }
