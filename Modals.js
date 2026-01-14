@@ -1,5 +1,4 @@
-// --- 알림/확인 모달 ---
-window.AlertModal = ({ show, message, isDestructive, verificationWord, onConfirm, onCancel }) => {
+window.AlertModal = React.memo(({ show, message, level = 'info', isDestructive = false, verificationWord, onConfirm, onCancel }) => {
     const { useState, useEffect } = React;
     const [input, setInput] = useState('');
 
@@ -7,61 +6,68 @@ window.AlertModal = ({ show, message, isDestructive, verificationWord, onConfirm
         if (show) setInput('');
     }, [show]);
 
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (!show) return;
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (verificationWord) {
+                    if (input === verificationWord) onConfirm(input);
+                } else {
+                    if (onConfirm) onConfirm();
+                    else if (onCancel) onCancel();
+                }
+            }
+            if (e.key === 'Escape') {
+                if (onCancel) onCancel();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [show, input, verificationWord, onConfirm, onCancel]);
+
     if (!show) return null;
 
+    const styles = {
+        info: { container: "max-w-sm border-slate-100 dark:border-slate-700", iconBg: "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400", btnColor: "bg-indigo-600 hover:bg-indigo-700", icon: <Icons.Check /> },
+        warning: { container: "max-w-sm border-amber-100 dark:border-amber-900/30", iconBg: "bg-amber-50 dark:bg-amber-900/30 text-amber-500 dark:text-amber-400", btnColor: "bg-amber-500 hover:bg-amber-600", icon: <Icons.Target /> },
+        danger: { container: "max-w-md border-red-100 dark:border-red-900/30 shadow-red-100/50 dark:shadow-none", iconBg: "bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400", btnColor: "bg-red-500 hover:bg-red-600", icon: <Icons.Trash /> }
+    };
+
+    const currentLevel = (isDestructive ? 'danger' : level) || 'info';
+    const currentStyle = styles[currentLevel];
+
     return (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-slate-100 font-bold text-center">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in">
+            <div className={`bg-white dark:bg-slate-800 rounded-3xl p-8 w-full shadow-2xl border font-bold text-center transform transition-all scale-100 ${currentStyle.container}`}>
                 <div className="flex justify-center mb-6">
-                    <div className={`p-4 rounded-full font-black ${isDestructive ? 'bg-red-50 text-red-500' : 'bg-indigo-50 text-indigo-600'}`}>
-                        <Icons.Shield />
+                    <div className={`p-4 rounded-full font-black ${currentStyle.iconBg}`}>
+                        {verificationWord ? <Icons.Shield /> : currentStyle.icon}
                     </div>
                 </div>
-                <h3 className="text-xl mb-4 leading-relaxed whitespace-pre-wrap break-keep">{message}</h3>
-                
+                <h3 className="text-xl mb-4 leading-relaxed whitespace-pre-wrap break-keep text-slate-800 dark:text-slate-100">{message}</h3>
                 {verificationWord && (
                     <div className="mb-6">
-                        <p className="text-xs text-slate-400 mb-2">아래에 <span className="font-black text-slate-600">'{verificationWord}'</span>을(를) 입력하세요.</p>
-                        <input 
-                            type="text" 
-                            value={input} 
-                            onChange={(e) => setInput(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-center font-bold focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-300"
-                            placeholder={verificationWord}
-                        />
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">아래에 <span className="font-black text-slate-600 dark:text-slate-300">'{verificationWord}'</span>을(를) 입력하세요.</p>
+                        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-center font-bold focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-500 text-slate-800 dark:text-slate-100" placeholder={verificationWord} autoFocus />
                     </div>
                 )}
-
                 <div className="flex gap-3">
-                    <button onClick={onCancel} className="flex-1 py-3 text-slate-400 hover:bg-slate-50 rounded-2xl transition-colors">취소</button>
-                    <button 
-                        onClick={() => onConfirm(input)}
-                        disabled={verificationWord && input !== verificationWord}
-                        className={`flex-1 py-3 text-white rounded-2xl shadow-lg transition-all active:scale-95 ${
-                            verificationWord && input !== verificationWord
-                            ? 'bg-slate-300 cursor-not-allowed opacity-50 shadow-none'
-                            : (isDestructive ? 'bg-red-500 hover:bg-red-600' : 'bg-indigo-600 hover:bg-indigo-700')
-                        }`}
-                    >
-                        {isDestructive ? "삭제" : "확인"}
-                    </button>
+                    {onCancel && <button onClick={onCancel} className="flex-1 py-3 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors">{onConfirm ? "취소" : "닫기"}</button>}
+                    {onConfirm && <button onClick={() => onConfirm(input)} disabled={verificationWord && input !== verificationWord} className={`flex-1 py-3 text-white rounded-2xl shadow-lg transition-all active:scale-95 ${verificationWord && input !== verificationWord ? 'bg-slate-300 dark:bg-slate-600 cursor-not-allowed opacity-50 shadow-none' : currentStyle.btnColor}`}>{verificationWord ? "확인" : (currentLevel === 'danger' ? "삭제" : "확인")}</button>}
                 </div>
             </div>
         </div>
     );
-};
+});
 
-// --- 문의/민원 모달 (수정됨: 변수명 명확화) ---
-window.ContactModal = ({ show, config, contactEmail, onClose, onSubmit }) => {
+window.ContactModal = React.memo(({ show, config, contactEmail, onClose, onSubmit }) => {
     const { useState, useEffect } = React;
     const [message, setMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
 
     useEffect(() => {
-        if (show) {
-            setMessage('');
-            setIsSending(false);
-        }
+        if (show) { setMessage(''); setIsSending(false); }
     }, [show]);
 
     if (!show) return null;
@@ -74,92 +80,71 @@ window.ContactModal = ({ show, config, contactEmail, onClose, onSubmit }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100 font-bold">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-50">
-                    <div className="bg-indigo-50 p-2.5 rounded-full text-indigo-600">
-                        <Icons.Mail />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-black text-slate-800">문의 / 민원 접수</h3>
-                        <p className="text-xs text-slate-400 mt-1">관리자에게 메일이 전송됩니다.</p>
-                    </div>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in">
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-50 dark:border-slate-700">
+                    <div className="bg-indigo-50 dark:bg-indigo-900/30 p-2.5 rounded-full text-indigo-600 dark:text-indigo-400"><Icons.Mail /></div>
+                    <div><h3 className="text-xl font-black text-slate-800 dark:text-slate-100">문의 / 민원 접수</h3><p className="text-xs text-slate-400 mt-1">관리자에게 메일이 전송됩니다.</p></div>
                 </div>
-
                 <div className="space-y-4">
                     <div className="flex gap-4">
-                        <div className="flex-1">
-                            <label className="block text-xs text-slate-400 mb-1 ml-1">보내는 사람</label>
-                            <input type="text" value={config?.userName || ''} readOnly className="w-full p-3 bg-slate-50 rounded-xl text-slate-600 text-sm outline-none cursor-default" />
-                        </div>
-                        <div className="flex-1">
-                            <label className="block text-xs text-slate-400 mb-1 ml-1">연락처 이메일</label>
-                            <input type="text" value={contactEmail || ''} readOnly className="w-full p-3 bg-slate-50 rounded-xl text-slate-600 text-sm outline-none cursor-default" />
-                        </div>
+                        <div className="flex-1"><label className="block text-xs text-slate-400 mb-1 ml-1">보내는 사람</label><input type="text" value={config?.userName || ''} readOnly className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 text-sm outline-none cursor-default" /></div>
+                        <div className="flex-1"><label className="block text-xs text-slate-400 mb-1 ml-1">연락처 이메일</label><input type="text" value={contactEmail || ''} readOnly className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 text-sm outline-none cursor-default" /></div>
                     </div>
-
-                    <div>
-                        <label className="block text-xs text-slate-400 mb-1 ml-1">문의 내용</label>
-                        <textarea 
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            className="w-full h-32 p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 resize-none text-slate-700 leading-relaxed custom-scrollbar"
-                            placeholder="이곳에 문의하실 내용을 적어주세요. (버그 제보, 건의사항 등)"
-                        />
-                    </div>
-
+                    <div><label className="block text-xs text-slate-400 mb-1 ml-1">문의 내용</label><textarea value={message} onChange={(e) => setMessage(e.target.value)} className="w-full h-32 p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 resize-none text-slate-700 dark:text-slate-200 leading-relaxed custom-scrollbar" placeholder="이곳에 문의하실 내용을 적어주세요. (버그 제보, 건의사항 등)" /></div>
                     <div className="flex gap-3 mt-4">
-                        <button onClick={onClose} disabled={isSending} className="flex-1 py-3 text-slate-400 hover:bg-slate-50 rounded-2xl transition-colors">취소</button>
-                        <button 
-                            onClick={handleSubmit}
-                            disabled={!message.trim() || isSending}
-                            className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
-                        >
-                            {isSending ? "전송 중..." : "보내기"}
-                        </button>
+                        <button onClick={onClose} disabled={isSending} className="flex-1 py-3 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors">취소</button>
+                        <button onClick={handleSubmit} disabled={!message.trim() || isSending} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100">{isSending ? "전송 중..." : "보내기"}</button>
                     </div>
                 </div>
             </div>
         </div>
     );
-};
+});
 
-// --- 개인정보 수정 모달 ---
-window.ProfileEditModal = ({ 
+window.ProfileEditModal = React.memo(({ 
     editStage, 
     profileForm, setProfileForm, 
     verifyPassword, setVerifyPassword, 
     profileError, 
-    onVerifyPassword, onUpdateProfile, onCancel 
+    onVerifyPassword, onUpdateProfile, onCancel,
+    isAdmin 
 }) => {
     if (editStage === 'none') return null;
 
+    const handleEnter = (e, action) => {
+        if (e.key === 'Enter') {
+            e.preventDefault(); 
+            action();
+        }
+    };
+
     return (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100 font-bold">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-50">
-                    <div className="bg-indigo-50 p-2.5 rounded-full text-indigo-600">
-                        <Icons.Settings />
-                    </div>
-                    <h3 className="text-xl font-black text-slate-800">개인정보 수정</h3>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in">
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-50 dark:border-slate-700">
+                    <div className="bg-indigo-50 dark:bg-indigo-900/30 p-2.5 rounded-full text-indigo-600 dark:text-indigo-400"><Icons.Settings /></div>
+                    <h3 className="text-xl font-black text-slate-800 dark:text-slate-100">개인정보 수정</h3>
                 </div>
 
                 {editStage === 'verify' ? (
                     <div className="space-y-4">
-                        <p className="text-sm text-slate-500 mb-4">본인 확인을 위해 현재 비밀번호를 입력해주세요.</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">본인 확인을 위해 현재 비밀번호를 입력해주세요.</p>
                         <div>
                             <label className="block text-xs text-slate-400 mb-1 ml-1">비밀번호</label>
                             <input 
                                 type="password" 
                                 value={verifyPassword}
                                 onChange={(e) => setVerifyPassword(e.target.value)}
-                                className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100"
+                                onKeyDown={(e) => handleEnter(e, onVerifyPassword)}
+                                className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 dark:text-white"
                                 placeholder="비밀번호 입력"
+                                autoFocus
                             />
                         </div>
-                        {profileError && <p className="text-red-500 text-sm font-black text-center">{profileError}</p>}
+                        {profileError && <p className="text-red-500 dark:text-red-400 text-sm font-black text-center">{profileError}</p>}
                         <div className="flex gap-3 mt-4">
-                            <button onClick={onCancel} className="flex-1 py-3 text-slate-400 hover:bg-slate-50 rounded-2xl transition-colors">취소</button>
+                            <button onClick={onCancel} className="flex-1 py-3 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors">취소</button>
                             <button onClick={onVerifyPassword} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95">확인</button>
                         </div>
                     </div>
@@ -171,40 +156,62 @@ window.ProfileEditModal = ({
                                 type="text" 
                                 value={profileForm.name}
                                 onChange={(e) => setProfileForm(p => ({...p, name: e.target.value}))}
-                                className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100"
+                                onKeyDown={(e) => handleEnter(e, onUpdateProfile)}
+                                className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 dark:text-white"
                             />
                         </div>
                         <div>
                             <label className="block text-xs text-slate-400 mb-1 ml-1">이메일</label>
-                            <input 
-                                type="email" 
-                                value={profileForm.email}
-                                onChange={(e) => setProfileForm(p => ({...p, email: e.target.value}))}
-                                className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100"
-                            />
+                            {isAdmin ? (
+                                <input 
+                                    type="email" 
+                                    value={profileForm.email}
+                                    onChange={(e) => setProfileForm(p => ({...p, email: e.target.value}))}
+                                    onKeyDown={(e) => handleEnter(e, onUpdateProfile)}
+                                    className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 dark:text-white"
+                                    placeholder="변경할 이메일 입력"
+                                />
+                            ) : (
+                                <div className="flex items-center w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl border border-transparent focus-within:ring-2 focus-within:ring-indigo-100 dark:focus:ring-indigo-800 focus-within:bg-white dark:focus-within:bg-slate-600 transition-colors">
+                                    <input 
+                                        type="text" 
+                                        value={profileForm.email.includes('@') ? profileForm.email.split('@')[0] : profileForm.email}
+                                        onChange={(e) => {
+                                            const idPart = e.target.value.replace(/@.*/, ''); 
+                                            setProfileForm(p => ({...p, email: `${idPart}@snu.ac.kr`}));
+                                        }}
+                                        onKeyDown={(e) => handleEnter(e, onUpdateProfile)}
+                                        className="bg-transparent outline-none flex-1 font-bold text-slate-800 dark:text-white"
+                                        placeholder="아이디"
+                                    />
+                                    <span className="text-slate-400 font-bold ml-1">@snu.ac.kr</span>
+                                </div>
+                            )}
                         </div>
-                        <div className="pt-4 border-t border-slate-50">
+                        <div className="pt-4 border-t border-slate-50 dark:border-slate-700">
                             <p className="text-xs text-indigo-400 font-bold mb-3 ml-1">비밀번호 변경 (선택사항)</p>
                             <div className="space-y-3">
                                 <input 
                                     type="password" 
                                     value={profileForm.newPw}
                                     onChange={(e) => setProfileForm(p => ({...p, newPw: e.target.value}))}
-                                    className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 placeholder:text-slate-300"
+                                    onKeyDown={(e) => handleEnter(e, onUpdateProfile)}
+                                    className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 placeholder:text-slate-300 dark:placeholder:text-slate-500 dark:text-white"
                                     placeholder="새 비밀번호 (변경시에만 입력)"
                                 />
                                 <input 
                                     type="password" 
                                     value={profileForm.confirmPw}
                                     onChange={(e) => setProfileForm(p => ({...p, confirmPw: e.target.value}))}
-                                    className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 placeholder:text-slate-300"
+                                    onKeyDown={(e) => handleEnter(e, onUpdateProfile)}
+                                    className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 placeholder:text-slate-300 dark:placeholder:text-slate-500 dark:text-white"
                                     placeholder="새 비밀번호 확인"
                                 />
                             </div>
                         </div>
-                        {profileError && <p className="text-red-500 text-sm font-black text-center">{profileError}</p>}
+                        {profileError && <p className="text-red-500 dark:text-red-400 text-sm font-black text-center">{profileError}</p>}
                         <div className="flex gap-3 mt-6">
-                            <button onClick={onCancel} className="flex-1 py-3 text-slate-400 hover:bg-slate-50 rounded-2xl transition-colors">취소</button>
+                            <button onClick={onCancel} className="flex-1 py-3 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors">취소</button>
                             <button onClick={onUpdateProfile} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95">저장하기</button>
                         </div>
                     </div>
@@ -212,4 +219,166 @@ window.ProfileEditModal = ({
             </div>
         </div>
     );
-};
+});
+
+window.NoticeModal = React.memo(({ show, notices, onClose }) => {
+    if (!show) return null;
+
+    return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in">
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold max-h-[80vh] flex flex-col">
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50 dark:border-slate-700 shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-rose-50 dark:bg-rose-900/30 p-2.5 rounded-full text-rose-500 dark:text-rose-400">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
+                        </div>
+                        <h3 className="text-xl font-black text-slate-800 dark:text-slate-100">공지사항</h3>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-400 transition-colors">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+
+                <div className="overflow-y-auto custom-scrollbar flex-1 space-y-4 pr-2">
+                    {notices && notices.length > 0 ? (
+                        notices.map((notice) => (
+                            <div key={notice.id} className="bg-slate-50 dark:bg-slate-700/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-600">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h4 className="text-slate-800 dark:text-slate-200 font-black text-lg">{notice.title}</h4>
+                                    <span className="text-xs text-slate-400 dark:text-slate-500 font-bold bg-white dark:bg-slate-800 px-2 py-1 rounded-full border border-slate-100 dark:border-slate-700 shrink-0 ml-2">
+                                        {notice.createdAt?.toDate ? notice.createdAt.toDate().toLocaleDateString() : '날짜 없음'}
+                                    </span>
+                                </div>
+                                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-medium">
+                                    {notice.content}
+                                </p>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-10 text-slate-400">등록된 공지사항이 없습니다.</div>
+                    )}
+                </div>
+
+                <div className="mt-6 pt-2 shrink-0">
+                    <button onClick={onClose} className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 text-sm font-black">
+                        확인
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+});
+
+// [NEW] 튜토리얼 모달
+window.TutorialModal = React.memo(({ show, onClose }) => {
+    const { useState, useEffect, useCallback } = React;
+    const [step, setStep] = useState(0);
+
+    const steps = [
+        {
+            title: "환영합니다! 👋",
+            content: "서울대학교 물리교육과 졸업 이수 학점 관리 서비스입니다.\n\n복잡한 졸업 요건, 이제 한눈에 확인하고\n간편하게 관리해보세요!",
+            icon: <Icons.Cap />
+        },
+        {
+            title: "설정 및 개인화 ⚙️",
+            content: "상단의 프로필 영역을 눌러보세요.\n\n• 다크 모드 ON/OFF\n• 전공 설정 (복수/부전공)\n• 데이터 PDF 저장 및 초기화\n\n등 다양한 기능을 사용할 수 있습니다.",
+            icon: <Icons.Settings />
+        },
+        {
+            title: "진행률 대시보드 📊",
+            content: "화면 상단의 카드들은 각 영역별 이수 현황을 보여줍니다.\n\n클릭하면 해당 영역으로 스크롤되며,\n모든 학점을 채우면 카드가 초록색으로 변합니다!",
+            icon: <Icons.Target />
+        },
+        {
+            title: "과목 관리 📝",
+            content: "각 영역(교양, 전공 등)에서 수강한 과목을 체크하세요.\n\n• 빈칸에 과목명 입력 가능\n• ➕ 버튼으로 직접 과목 추가\n• 🗑️ 버튼으로 과목 삭제\n• 드래그 앤 드롭으로 순서 변경",
+            icon: <Icons.Book />
+        },
+        {
+            title: "수강 예정 목록 확인 🔭",
+            content: "우측(모바일은 하단)의 '수강 예정' 패널을 확인하세요.\n\n남은 과목들을 한곳에 모아 보여줍니다.\n패널을 클릭하면 큰 화면으로 비교할 수 있어요.",
+            icon: <Icons.Layers />
+        },
+        {
+            title: "준비 되셨나요? 🚀",
+            content: "이제 직접 졸업 요건을 채워나가 보세요.\n\n여러분의 성공적인 졸업을 응원합니다!",
+            icon: <Icons.Check />
+        }
+    ];
+
+    useEffect(() => {
+        if (show) setStep(0);
+    }, [show]);
+
+    const handleNext = useCallback(() => {
+        if (step < steps.length - 1) setStep(p => p + 1);
+        else onClose();
+    }, [step, steps.length, onClose]);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (!show) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleNext();
+            }
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [show, handleNext, onClose]);
+
+    if (!show) return null;
+
+    const currentStep = steps[step];
+
+    return (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[300] flex items-center justify-center p-4 animation-fade-in">
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl border-2 border-indigo-100 dark:border-slate-600 font-bold relative overflow-hidden">
+                {/* Progress Bar */}
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-100 dark:bg-slate-700">
+                    <div 
+                        className="h-full bg-indigo-500 transition-all duration-300 ease-out"
+                        style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+                    />
+                </div>
+
+                <div className="flex flex-col items-center text-center mt-4">
+                    <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mb-6 shadow-sm text-3xl">
+                        {currentStep.icon}
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mb-4 tracking-tight">
+                        {currentStep.title}
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap mb-8">
+                        {currentStep.content}
+                    </p>
+                </div>
+
+                <div className="flex gap-3">
+                    <button 
+                        onClick={onClose} 
+                        className="flex-1 py-3.5 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors text-sm font-bold"
+                    >
+                        건너뛰기
+                    </button>
+                    <button 
+                        onClick={handleNext} 
+                        className="flex-[2] py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 text-sm font-black"
+                    >
+                        {step === steps.length - 1 ? "시작하기" : "다음"}
+                    </button>
+                </div>
+                
+                <div className="mt-4 text-center">
+                    <p className="text-[10px] text-slate-400 dark:text-slate-600 font-medium">
+                        Enter 키를 눌러 다음으로 이동
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+});

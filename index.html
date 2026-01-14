@@ -2,25 +2,78 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>졸업 이수 현황 관리</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="description" content="서울대학교 물리교육과 학생들을 위한 졸업 이수 학점 계산 및 관리 서비스입니다.">
+    <meta name="author" content="Park Geun-hyeong">
+    
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="SNU PhysEd Graduation Tracker">
+    <meta property="og:description" content="서울대학교 물리교육과 졸업 이수 현황을 간편하게 확인하세요.">
+    <meta property="og:image" content="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Seoul_National_University_Seal.svg/1200px-Seoul_National_University_Seal.svg.png">
+
+    <title>서울대 물리교육과 졸업 관리</title>
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
 
     <link rel="stylesheet" href="style.css">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // 다크 모드 설정 추가
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans KR"', 'sans-serif'],
+                    },
+                    colors: {
+                        indigo: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' },
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* 초기 로딩 애니메이션 */
+        .initial-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f8fafc; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 다크모드 초기 로딩 배경 */
+        .dark .initial-loader { background-color: #0f172a; }
+        .dark .spinner { border-color: #1e293b; border-top-color: #6366f1; }
+        .dark p { color: #94a3b8 !important; }
+    </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 antialiased select-none transition-colors duration-300">
+    
+    <div id="root">
+        <div class="initial-loader">
+            <div class="spinner"></div>
+            <p style="margin-top: 20px; font-weight: 700; color: #475569; font-size: 14px;">앱을 실행하는 중입니다...</p>
+        </div>
+    </div>
+
+    <noscript>
+        <div style="padding: 20px; text-align: center; color: red; font-weight: bold;">
+            이 서비스를 이용하려면 자바스크립트를 활성화해야 합니다.
+        </div>
+    </noscript>
 
     <script type="text/babel" src="firebase-init.js"></script>
     <script type="text/babel" src="data.js"></script>
@@ -37,7 +90,7 @@
 
     <script type="text/babel" src="main.js"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 </body>
 </html>
