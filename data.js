@@ -116,6 +116,42 @@ window.getGeneralDataByYear = (year) => {
     return [];
 };
 
+// [신규] 물리교육과 주전공 데이터 생성 함수
+window.getPhysicsDataByYear = (year) => {
+    const y = year > 2000 ? year % 100 : year;
+    
+    const common = [
+        { id: 'p1', name: '일반물리학 및 실험2', completed: false, credits: 4, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
+        { id: 'p2', name: '역학 및 교육 1', completed: false, credits: 3, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
+        { id: 'p3', name: '전자기 및 교육 1', completed: false, credits: 3, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
+        { id: 'p4', name: '전산물리 및 교육', completed: false, credits: 3, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
+        { id: 'p5', name: '현대물리 및 교육', completed: false, credits: 3, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
+        { id: 'p6', name: '양자물리 및 교육1', completed: false, credits: 3, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
+        { id: 'p7', name: '파동 및 광학 교육', completed: false, credits: 3, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
+        { id: 'p8', name: '열통계물리 및 교육', completed: false, credits: 3, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
+        { id: 'p9', name: '물리실험 및 시범1', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
+        { id: 'p10', name: '물리실험 및 시범2', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
+        { id: 'p11', name: '물리교육실험', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
+        { id: 'p12', name: '물리교육론', completed: false, credits: 3, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
+    ];
+
+    if (y >= 14 && y <= 18) {
+        // [변경] 14-18학번: 과논논 필수, 선택과목 1개(이름 수정)
+        return [
+            ...common,
+            { id: 'p_kwanon', name: '과학 논리 및 논술', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
+            { id: 'p_sel1', name: '[교과교육 선택]', completed: false, credits: 0, fixed: true, lockCredits: true, selectable: true, lockDelete: true, limitedChoices: true }
+        ];
+    } else {
+        // 그 외 학번: 기본 2개 선택
+        return [
+            ...common,
+            { id: 'p_sel1', name: '[교과교육 선택 1]', completed: false, credits: 0, fixed: true, lockCredits: true, selectable: true, lockDelete: true },
+            { id: 'p_sel2', name: '[교과교육 선택 2]', completed: false, credits: 0, fixed: true, lockCredits: true, selectable: true, lockDelete: true }
+        ];
+    }
+};
+
 window.getTeachingDataByYear = (year) => {
     // 4자리 연도 -> 2자리 변환
     const y = year > 2000 ? year % 100 : year;
@@ -225,6 +261,11 @@ window.getInitialGuestData = (year) => {
     if (window.getTeachingDataByYear) {
         const teachItems = window.getTeachingDataByYear(year);
         if (teachItems.length > 0) initialData.teaching.items = teachItems;
+    }
+    // [변경] 물리교육과 데이터 초기화 호출
+    if (window.getPhysicsDataByYear) {
+        const phyItems = window.getPhysicsDataByYear(year);
+        if (phyItems.length > 0) initialData.physics.items = phyItems;
     }
     if (window.getEtcGradDataByYear) {
         const etcItems = window.getEtcGradDataByYear(year);

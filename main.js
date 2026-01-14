@@ -338,7 +338,7 @@ const Footer = React.memo(({ onOpenContact }) => {
                     <Icons.Cap /> SNU PhysEd Graduation Tracker
                 </h4>
                 <div className="flex items-center gap-2 text-xs font-bold bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 px-3 py-1 rounded-full">
-                    <span>v1.0.0</span><span className="w-1 h-1 bg-indigo-300 dark:bg-indigo-500 rounded-full"></span><span>Stable</span>
+                    <span>v1.2.0</span><span className="w-1 h-1 bg-indigo-300 dark:bg-indigo-500 rounded-full"></span><span>Stable</span>
                 </div>
                 <div className="flex flex-wrap justify-center gap-4 text-sm font-bold text-slate-600 dark:text-slate-400 my-2">
                     <a href="https://physed.snu.ac.kr/20212022%ed%95%99%eb%b2%88/" target="_blank" rel="noreferrer" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-1"><Icons.Book /> 물리교육과 졸업사정 기준 확인</a>
@@ -435,13 +435,13 @@ const App = () => {
 
     const handleGuestYearChange = useCallback((newYear) => {
         setModal({
-            show: true, message: `${newYear}학번 기준으로 데이터를 재설정하시겠습니까?\n기존에 입력한 '교양', '교직' 및 '기타 졸업 요건' 이수 내역이 초기화됩니다.`, verificationWord: "변경", level: 'warning',
+            show: true, message: `${newYear}학번 기준으로 데이터를 재설정하시겠습니까?\n기존에 입력한 '교양', '전공', '교직' 등 모든 이수 내역이 초기화됩니다.`, verificationWord: "변경", level: 'warning',
             onConfirm: () => {
                 const newData = JSON.parse(JSON.stringify(data));
-                if (window.getGeneralDataByYear) { const genItems = window.getGeneralDataByYear(newYear); if (genItems.length > 0) newData.general.items = genItems; }
-                if (window.getTeachingDataByYear) { const teachItems = window.getTeachingDataByYear(newYear); if (teachItems.length > 0) newData.teaching.items = teachItems; }
-                // [수정] 기타 졸업 요건 업데이트 반영
-                if (window.getEtcGradDataByYear) { const etcItems = window.getEtcGradDataByYear(newYear); if (etcItems.length > 0) newData.etcGrad.items = etcItems; }
+                if (window.getGeneralDataByYear) newData.general.items = window.getGeneralDataByYear(newYear);
+                if (window.getTeachingDataByYear) newData.teaching.items = window.getTeachingDataByYear(newYear);
+                if (window.getPhysicsDataByYear) newData.physics.items = window.getPhysicsDataByYear(newYear);
+                if (window.getEtcGradDataByYear) newData.etcGrad.items = window.getEtcGradDataByYear(newYear);
 
                 setConfig(prev => ({ ...prev, studentYear: newYear }));
                 setData(newData);
@@ -605,13 +605,14 @@ const App = () => {
         if (isGuest) return; 
         const genItems = window.getGeneralDataByYear(config.studentYear);
         const teachItems = window.getTeachingDataByYear(config.studentYear);
-        // [수정] 기타 졸업 요건 자동 동기화 추가
+        const phyItems = window.getPhysicsDataByYear ? window.getPhysicsDataByYear(config.studentYear) : [];
         const etcItems = window.getEtcGradDataByYear ? window.getEtcGradDataByYear(config.studentYear) : [];
 
         setData(prev => {
             const next = { ...prev };
             if (genItems.length > 0 && (!prev.general.items || prev.general.items.length === 0)) next.general = { ...next.general, items: genItems };
             if (teachItems.length > 0 && (!prev.teaching.items || prev.teaching.items.length === 0)) next.teaching = { ...next.teaching, items: teachItems };
+            if (phyItems.length > 0 && (!prev.physics.items || prev.physics.items.length === 0)) next.physics = { ...next.physics, items: phyItems };
             if (etcItems.length > 0 && (!prev.etcGrad.items || prev.etcGrad.items.length === 0)) next.etcGrad = { ...next.etcGrad, items: etcItems };
             return next;
         });
@@ -650,7 +651,7 @@ const App = () => {
                     let resetItems = [];
                     if (sectionKey === 'general') resetItems = window.getGeneralDataByYear(config.studentYear);
                     else if (sectionKey === 'teaching') resetItems = window.getTeachingDataByYear(config.studentYear);
-                    // [수정] 기타 졸업 요건 리셋 추가
+                    else if (sectionKey === 'physics' && window.getPhysicsDataByYear) resetItems = window.getPhysicsDataByYear(config.studentYear);
                     else if (sectionKey === 'etcGrad' && window.getEtcGradDataByYear) resetItems = window.getEtcGradDataByYear(config.studentYear);
                     else { const baseDataCopy = JSON.parse(JSON.stringify(BASE_DATA)); resetItems = baseDataCopy[sectionKey].items || []; }
                     next[sectionKey] = { ...next[sectionKey], items: resetItems };
@@ -668,11 +669,12 @@ const App = () => {
                 const freshData = JSON.parse(JSON.stringify(BASE_DATA));
                 const genItems = window.getGeneralDataByYear(config.studentYear);
                 const teachItems = window.getTeachingDataByYear(config.studentYear);
-                // [수정] 기타 졸업 요건 리셋 추가
+                const phyItems = window.getPhysicsDataByYear ? window.getPhysicsDataByYear(config.studentYear) : [];
                 const etcItems = window.getEtcGradDataByYear ? window.getEtcGradDataByYear(config.studentYear) : [];
 
                 if (genItems.length > 0) freshData.general.items = genItems;
                 if (teachItems.length > 0) freshData.teaching.items = teachItems;
+                if (phyItems.length > 0) freshData.physics.items = phyItems;
                 if (etcItems.length > 0) freshData.etcGrad.items = etcItems;
 
                 setData(freshData);
@@ -805,15 +807,6 @@ const App = () => {
 
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-8 relative">
-            {isAdmin && impersonatedUser && (
-                <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-2 z-[9999] font-bold shadow-lg flex justify-center items-center gap-4">
-                    <span>⚠️ 관리자 모드: 사용자 [{impersonatedUser.userName}] 화면을 보고 있습니다.</span>
-                    <button onClick={handleExitImpersonation} className="bg-white text-red-600 px-3 py-1 rounded-full text-xs hover:bg-red-50 font-black">
-                        관리자 홈으로 복귀
-                    </button>
-                </div>
-            )}
-
             <AlertModal show={modal.show} message={modal.message} level={modal.level} verificationWord={modal.verificationWord} onConfirm={modal.onConfirm} onCancel={modal.onCancel} />
             <ProfileEditModal editStage={editStage} profileForm={profileForm} setProfileForm={setProfileForm} verifyPassword={verifyPassword} setVerifyPassword={setVerifyPassword} profileError={profileError} onVerifyPassword={onVerifyPassword} onUpdateProfile={onUpdateProfile} onCancel={onCancelEdit} isAdmin={false} />
             <ContactModal show={showContact} config={config} contactEmail={userEmail} onClose={onCloseContact} onSubmit={handleInquirySubmit} />

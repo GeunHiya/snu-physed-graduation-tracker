@@ -47,7 +47,7 @@ window.CourseInputRenderer = React.memo(({ i, ck, handlers, getForeign2Options, 
                 <select value={i.subName} onChange={(e) => handleForeignChange(ck, i.id, 'subName', e.target.value)} className={selectClass}>
                     {FOREIGN1_OPTIONS.map(opt => <option key={opt} value={opt}>{opt === '면제' ? '제2외국어(면제)' : opt}</option>)}
                 </select>
-                {/* [변경] 14-20학번: 영어 과목일 때만 수강 시기 선택 (2020이전 / 2021이후) */}
+                {/* 14-20학번: 영어 과목일 때만 수강 시기 선택 (2020이전 / 2021이후) */}
                 {i.isEnglish1420 && englishSubjects.includes(i.subName) && (
                     <select value={i.takenTime1420 || 'before21'} onChange={(e) => handleEnglish1420Change(ck, i.id, e.target.value)} className={selectClass}>
                         <option value="before21">2020년 이전 수강 (2pt)</option>
@@ -67,7 +67,7 @@ window.CourseInputRenderer = React.memo(({ i, ck, handlers, getForeign2Options, 
                     <option value="" disabled>선택</option>
                     {getForeign2Options().map(opt => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
-                {/* [변경] 14-20학번: 영어 과목일 때만 수강 시기 선택 */}
+                {/* 14-20학번: 영어 과목일 때만 수강 시기 선택 */}
                 {i.isEnglish1420 && englishSubjects.includes(i.subName) && (
                     <select value={i.takenTime1420 || 'before21'} onChange={(e) => handleEnglish1420Change(ck, i.id, e.target.value)} className={selectClass}>
                         <option value="before21">2020년 이전 수강 (2pt)</option>
@@ -90,7 +90,11 @@ window.CourseInputRenderer = React.memo(({ i, ck, handlers, getForeign2Options, 
     }
     if (i.type === 'core' || i.type === 'pe' || i.type === 'veritas') return <div className={containerClass}>{i.options ? <select value={i.prefix} onChange={e => handleCorePrefixChange(ck, i.id, e.target.value)} className={selectClass}>{i.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select> : <span className="text-slate-400 dark:text-slate-500 shrink-0 font-bold">{i.prefix}</span>}<span className={colonClass}>:</span><input type="text" value={i.name} onChange={e => updateName(ck, i.id, e.target.value)} className={inputClass} placeholder="과목명..." /></div>;
     if (i.type === 'coreFixed') return <div className={containerClass}><span className="text-slate-400 dark:text-slate-500 shrink-0 font-bold">{i.prefix}</span><span className={colonClass}>:</span><input type="text" value={i.name} onChange={e => updateName(ck, i.id, e.target.value)} className={inputClass} placeholder="과목명..." /></div>;
-    if (i.selectable) return <select value={i.name.includes('[') ? '' : i.name} onChange={(e) => handleSubjectSelect(ck, i.id, e.target.value)} className={`bg-slate-50 dark:bg-slate-700 border-none outline-none text-sm font-bold text-slate-700 dark:text-slate-200 py-2 px-3 rounded-xl focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 w-full transition-colors ${i.completed ? 'text-slate-300 dark:text-slate-600 font-normal' : ''}`}><option value="" disabled>{i.name}</option>{PHYSICS_ED_CHOICES.map(opt => <option key={opt.name} value={opt.name}>{opt.name} ({opt.credits}pt)</option>)}</select>;
+    if (i.selectable) {
+        // [변경] 제한된 선택지가 있는 경우 필터링 (14-18학번 또는 과논논 대체 시)
+        const choices = i.limitedChoices ? PHYSICS_ED_CHOICES.filter(o => o.name !== '과학 논리 및 논술') : PHYSICS_ED_CHOICES;
+        return <select value={i.name.includes('[') ? '' : i.name} onChange={(e) => handleSubjectSelect(ck, i.id, e.target.value)} className={`bg-slate-50 dark:bg-slate-700 border-none outline-none text-sm font-bold text-slate-700 dark:text-slate-200 py-2 px-3 rounded-xl focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 w-full transition-colors ${i.completed ? 'text-slate-300 dark:text-slate-600 font-normal' : ''}`}><option value="" disabled>{i.name}</option>{choices.map(opt => <option key={opt.name} value={opt.name}>{opt.name} ({opt.credits}pt)</option>)}</select>;
+    }
     return <input type="text" value={i.name} readOnly={i.fixedName || i.fixed} onChange={e => updateName(ck, i.id, e.target.value)} draggable={false} placeholder={i.placeholder} className={`bg-transparent border-none outline-none text-sm w-full font-bold focus:text-indigo-600 dark:focus:text-indigo-400 transition-colors ${!i.fixedName && !i.fixed ? 'input-underline border-b border-transparent focus:border-transparent' : ''} ${(i.completed || (i.multi && i.checks?.every(c => c))) ? 'text-slate-300 dark:text-slate-600 line-through font-normal' : (i.placeholder && !i.name ? 'text-gray-400 dark:text-gray-500' : 'text-slate-700 dark:text-slate-200')} ${i.fixed && !i.deleteMsg ? 'cursor-default' : ''}`} />;
 });
 
@@ -106,44 +110,7 @@ window.useDataHandlers = (setData, setModal, setNewInputs, newInputs, config) =>
     const handleMathChange = useCallback((ck, id, mainMath) => { const pair = MATH1_PAIRS.concat(MATH2_PAIRS).find(p => p.main === mainMath); if (!pair) return; setData(prev => ({ ...prev, [ck]: { ...prev[ck], items: prev[ck].items.map(i => { if (i.id === id) return { ...i, subName: pair.main, name: pair.main }; if (id === 'g_m1' && i.id === 'g_mp1') return { ...i, name: pair.practice }; if (id === 'g_m2' && i.id === 'g_mp2') return { ...i, name: pair.practice }; return i; })}})); }, [setData]);
     const handleMSChange = useCallback((ck, id, selectedMain) => { const opt = MS_OPTIONS.find(o => o.main === selectedMain); const suffix = id.slice(-1); setData(prev => ({ ...prev, [ck]: { ...prev[ck], items: prev[ck].items.map(i => { if (i.id === id) return { ...i, subName: opt.main, credits: opt.mainCr }; if (i.id === `g_msp${suffix}`) return { ...i, name: opt.practice || '', credits: opt.pracCr, hidden: opt.practice === null }; return i; })}})); }, [setData]);
     const handleCorePrefixChange = useCallback((ck, id, prefix) => setData(prev => ({ ...prev, [ck]: { ...prev[ck], items: prev[ck].items.map(i => i.id === id ? { ...i, prefix } : i) } })), [setData]);
-    
-    // [변경] 외국어 변경 핸들러 개선
-    const handleForeignChange = useCallback((ck, id, field, val) => { 
-        setData(prev => { 
-            let newItems = prev[ck].items.map(i => {
-                if (i.id === id) {
-                    const updatedItem = val === '면제' ? { ...i, [field]: val, name: '' } : { ...i, [field]: val };
-                    
-                    // 14-20학번 학점 자동 계산 로직
-                    if (i.isEnglish1420) {
-                        const englishSubjects = ['대학영어 1', '대학영어 2', '고급영어'];
-                        if (englishSubjects.includes(val)) {
-                            // 영어 과목으로 변경 시: 수강 시기에 따라 2 or 3학점 (기본값은 현재 설정된 시기 기준)
-                            updatedItem.credits = updatedItem.takenTime1420 === 'after21' ? 3 : 2;
-                        } else {
-                            // 면제(제2외국어) 또는 제2외국어 변경 시: 3학점 고정
-                            updatedItem.credits = 3;
-                        }
-                    }
-                    return updatedItem;
-                }
-                return i;
-            });
-
-            // 외국어 1, 2 상호작용 로직 (기존 유지)
-            const currentF1 = newItems.find(i => i.type === 'foreign1'); 
-            const currentF2 = newItems.find(i => i.type === 'foreign2'); 
-            if (currentF1 && currentF2) { 
-                if (currentF1.subName === '고급영어' || currentF1.subName === '면제') { 
-                    if (currentF2.subName !== '제2외국어') newItems = newItems.map(i => i.id === currentF2.id ? { ...i, subName: '제2외국어', name: '', credits: 3 } : i); 
-                } else if (currentF1.subName === '대학영어 2') { 
-                    if ((currentF2.subName === '대학영어 1' || currentF2.subName === '대학영어 2') && !['고급영어', '제2외국어'].includes(currentF2.subName)) newItems = newItems.map(i => i.id === currentF2.id ? { ...i, subName: '' } : i); 
-                } 
-            } 
-            return { ...prev, [ck]: { ...prev[ck], items: newItems } }; 
-        }); 
-    }, [setData]);
-
+    const handleForeignChange = useCallback((ck, id, field, val) => { setData(prev => { let newItems = prev[ck].items.map(i => i.id === id ? (val === '면제' ? { ...i, [field]: val, name: '' } : { ...i, [field]: val }) : i); const currentF1 = newItems.find(i => i.type === 'foreign1'); const currentF2 = newItems.find(i => i.type === 'foreign2'); if (currentF1 && currentF2) { if (currentF1.subName === '고급영어' || currentF1.subName === '면제') { if (currentF2.subName !== '제2외국어') newItems = newItems.map(i => i.id === currentF2.id ? { ...i, subName: '제2외국어', name: '', credits: 3 } : i); } else if (currentF1.subName === '대학영어 2') { if ((currentF2.subName === '대학영어 1' || currentF2.subName === '대학영어 2') && !['고급영어', '제2외국어'].includes(currentF2.subName)) newItems = newItems.map(i => i.id === currentF2.id ? { ...i, subName: '' } : i); } } return { ...prev, [ck]: { ...prev[ck], items: newItems } }; }); }, [setData]);
     const handleBasicEnglishYearChange = useCallback((ck, id, yearType) => setData(prev => ({ ...prev, [ck]: { ...prev[ck], items: prev[ck].items.map(i => i.id === id ? { ...i, takenYear: yearType, credits: yearType === 'before23' ? 1 : 2 } : i) } })), [setData]);
     
     // 14-20학번 영어 수강 시기 변경 핸들러
@@ -163,7 +130,77 @@ window.useDataHandlers = (setData, setModal, setNewInputs, newInputs, config) =>
             setData(prev => {
                 let newItems = prev[ck].items.filter(i => { if (id === 'g_m2' && i.id === 'g_mp2') return false; return i.id !== id; });
                 
-                // '글쓰기의 기초' 삭제 시 -> '대학글쓰기 1', '대학글쓰기 2' 추가
+                // 4자리 연도 -> 2자리 변환
+                const y = config.studentYear > 2000 ? config.studentYear % 100 : config.studentYear;
+
+                // [신규] 19학번 이후: 대학글쓰기 2(g_w2) 삭제 시 -> 과학 논리 및 논술 추가, 선택 2 삭제
+                if (id === 'g_w2' && y >= 19) {
+                    // 1. 물리교육론(p12) 뒤에 과논논 추가
+                    const p12Idx = prev.physics.items.findIndex(i => i.id === 'p12');
+                    const newPhysicsItems = [...prev.physics.items];
+                    
+                    // 과논논이 없으면 추가
+                    if (!newPhysicsItems.some(i => i.id === 'p_kwanon')) {
+                        newPhysicsItems.splice(p12Idx + 1, 0, { 
+                            id: 'p_kwanon', name: '과학 논리 및 논술', completed: false, credits: 2, 
+                            fixed: true, lockCredits: true, fixedName: true, lockDelete: false, // 19+에서는 삭제 가능
+                            deleteMsg: "과학 논리 및 논술을 삭제하면 대학글쓰기 2를 수강해야 합니다.\n삭제하시겠습니까?" 
+                        });
+                    }
+                    
+                    // 2. p_sel2 삭제
+                    const filteredPhysics = newPhysicsItems.filter(i => i.id !== 'p_sel2');
+                    
+                    // 3. p_sel1 옵션 제한 (과논논 제외) 및 이름 변경
+                    const pSel1 = filteredPhysics.find(i => i.id === 'p_sel1');
+                    if (pSel1) {
+                        pSel1.name = '[교과교육 선택]'; // 이름 변경
+                        pSel1.limitedChoices = true;
+                    }
+
+                    return { ...prev, [ck]: { ...prev[ck], items: newItems }, physics: { ...prev.physics, items: filteredPhysics } };
+                }
+
+                // [신규] 19학번 이후: 대체된 과논논(p_kwanon) 삭제 시 -> 대학글쓰기 2 복구, 선택 2 복구
+                if (id === 'p_kwanon' && y >= 19) {
+                    // 1. 대학글쓰기 2 복구 (대학글쓰기 1 뒤에)
+                    const w1Idx = prev.general.items.findIndex(i => i.id === 'g_w1');
+                    const newGeneralItems = [...prev.general.items];
+                    if (!newGeneralItems.some(i => i.id === 'g_w2')) {
+                        newGeneralItems.splice(w1Idx + 1, 0, { 
+                            id: 'g_w2', name: '대학 글쓰기 2 : 과학과 기술 글쓰기', completed: false, credits: 2, 
+                            fixed: true, lockCredits: true, fixedName: true, deleteMsg: "과학논리 및 논술을 이수하였나요?" 
+                        });
+                    }
+
+                    // 2. 물리 영역: p_kwanon은 이미 filter로 삭제됨. p_sel2 복구 및 p_sel1 제한 해제
+                    const newPhysicsItems = prev.physics.items.filter(i => i.id !== 'p_kwanon'); // 현재 삭제 중인 항목 제외 (사실 newItems에서 처리되지만 ck가 다를 수 있음)
+                    
+                    // 만약 ck가 physics라면 newItems는 이미 p_kwanon이 빠진 상태
+                    let targetPhysicsItems = (ck === 'physics') ? newItems : newPhysicsItems;
+
+                    // p_sel2가 없으면 추가 (p_sel1 뒤에)
+                    if (!targetPhysicsItems.some(i => i.id === 'p_sel2')) {
+                        const sel1Idx = targetPhysicsItems.findIndex(i => i.id === 'p_sel1');
+                        if (sel1Idx !== -1) {
+                            targetPhysicsItems.splice(sel1Idx + 1, 0, { 
+                                id: 'p_sel2', name: '[교과교육 선택 2]', completed: false, credits: 0, 
+                                fixed: true, lockCredits: true, selectable: true, lockDelete: true 
+                            });
+                        }
+                    }
+
+                    // p_sel1 제한 해제 및 이름 복구
+                    const pSel1 = targetPhysicsItems.find(i => i.id === 'p_sel1');
+                    if (pSel1) {
+                        pSel1.name = '[교과교육 선택 1]';
+                        delete pSel1.limitedChoices;
+                    }
+
+                    return { ...prev, general: { ...prev.general, items: newGeneralItems }, physics: { ...prev.physics, items: targetPhysicsItems } };
+                }
+
+                // 14-18학번: '글쓰기의 기초' 삭제 시 -> '대학글쓰기 1', '대학글쓰기 2' 추가
                 if (id === 'g_wb') {
                     const writingItems = [
                         { id: 'g_w1', name: '대학글쓰기 1', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, lockDelete: true, deleteMsg: "제1영역에서 1개 교과목(3학점)을 수강해야 합니다." },
@@ -173,9 +210,8 @@ window.useDataHandlers = (setData, setModal, setNewInputs, newInputs, config) =>
                     newItems.splice(targetIdx, 0, ...writingItems);
                 }
                 
-                // [변경] '대학글쓰기 1' 삭제 시 -> 더 이상 '글쓰기의 기초'를 복구하지 않음 (단순 삭제)
-                if (id === 'g_w1') {
-                    // 대학글쓰기 2도 함께 삭제
+                // 14-18학번: '대학글쓰기 1' 삭제 시 -> 더 이상 '글쓰기의 기초'를 복구하지 않음 (단순 삭제)
+                if (id === 'g_w1' && y >= 14 && y <= 18) {
                     newItems = newItems.filter(i => i.id !== 'g_w2');
                 }
 
