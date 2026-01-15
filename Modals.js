@@ -382,3 +382,78 @@ window.TutorialModal = React.memo(({ show, onClose }) => {
         </div>
     );
 });
+
+// [신규] 전공선택 과목 다중 선택 모달
+window.MajorElectiveModal = React.memo(({ show, onClose, currentItems, onUpdate }) => {
+    const { useState, useEffect } = React;
+    const [selected, setSelected] = useState([]);
+
+    useEffect(() => {
+        if (show) {
+            // 현재 리스트에 있는 전공선택 과목들만 체크
+            const currentNames = currentItems.map(i => i.name);
+            const initialSelected = PHYSICS_ELECTIVES.filter(name => currentNames.includes(name));
+            setSelected(initialSelected);
+        }
+    }, [show, currentItems]);
+
+    const handleToggle = (name) => {
+        setSelected(prev => {
+            if (prev.includes(name)) return prev.filter(n => n !== name);
+            return [...prev, name];
+        });
+    };
+
+    const handleSave = () => {
+        onUpdate(selected);
+        onClose();
+    };
+
+    if (!show) return null;
+
+    return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in">
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold max-h-[80vh] flex flex-col">
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-50 dark:border-slate-700 shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-indigo-50 dark:bg-indigo-900/30 p-2.5 rounded-full text-indigo-600 dark:text-indigo-400">
+                            <Icons.Book />
+                        </div>
+                        <h3 className="text-xl font-black text-slate-800 dark:text-slate-100">전공선택 과목 담기</h3>
+                    </div>
+                </div>
+
+                <div className="overflow-y-auto custom-scrollbar flex-1 pr-2">
+                     <div className="space-y-2">
+                        {PHYSICS_ELECTIVES.map((subject) => {
+                            const isChecked = selected.includes(subject);
+                            return (
+                                <div 
+                                    key={subject}
+                                    onClick={() => handleToggle(subject)}
+                                    className={`p-4 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${isChecked ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800' : 'bg-white dark:bg-slate-700 border-slate-100 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600'}`}
+                                >
+                                    <span className={`text-sm font-bold ${isChecked ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300'}`}>
+                                        {subject}
+                                    </span>
+                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${isChecked ? 'bg-indigo-500 border-indigo-500' : 'border-slate-300 dark:border-slate-500'}`}>
+                                        {isChecked && <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                     </div>
+                </div>
+
+                <div className="mt-6 pt-2 shrink-0 flex gap-3">
+                    <button onClick={onClose} className="flex-1 py-3 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors font-bold">
+                        취소
+                    </button>
+                    <button onClick={handleSave} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 font-black">
+                        적용하기 ({selected.length})
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+});

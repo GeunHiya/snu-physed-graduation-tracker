@@ -384,6 +384,56 @@ const App = () => {
     const [showNoticeModal, setShowNoticeModal] = useState(false);
     const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
 
+    // [신규] 전공선택 모달 상태
+    const [showElectiveModal, setShowElectiveModal] = useState(false);
+
+    const handleElectiveUpdate = useCallback((selectedNames) => {
+        setData(prev => {
+            const currentItems = prev.physics.items;
+            
+            // 기존 아이템 중 '선택 리스트'에 없는 전공선택 과목 제거
+            // (다른 과목들은 건드리지 않음)
+            const newPhysicsItems = currentItems.filter(item => {
+                // 전공선택 리스트에 없는 과목(필수 과목 등)은 유지
+                if (!PHYSICS_ELECTIVES.includes(item.name)) return true;
+                // 전공선택 리스트에 있다면, 이번에 선택된 목록에 포함되어야 유지
+                return selectedNames.includes(item.name);
+            });
+
+            // 선택된 과목 중 현재 없는 과목 추가
+            selectedNames.forEach(name => {
+                const exists = newPhysicsItems.some(i => i.name === name);
+                if (!exists) {
+                    const newItem = {
+                        id: `p_elect_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        name: name,
+                        completed: false,
+                        credits: 3, // 3학점 고정
+                        fixed: true, // 순서 변경 불가 (드래그 불가)
+                        lockCredits: true, // 학점 수정 불가
+                        lockDelete: false, // 삭제 가능
+                    };
+                    
+                    // 트리거 버튼(p_elect_trigger) 바로 앞에 삽입
+                    const triggerIndex = newPhysicsItems.findIndex(i => i.id === 'p_elect_trigger');
+                    if (triggerIndex !== -1) {
+                        newPhysicsItems.splice(triggerIndex, 0, newItem);
+                    } else {
+                        newPhysicsItems.push(newItem);
+                    }
+                }
+            });
+
+            return {
+                ...prev,
+                physics: {
+                    ...prev.physics,
+                    items: newPhysicsItems
+                }
+            };
+        });
+    }, []);
+
     // [NEW] 튜토리얼 관련 state
     const [showTutorial, setShowTutorial] = useState(false);
 
@@ -405,7 +455,7 @@ const App = () => {
 
     const toggleDarkMode = useCallback(() => setDarkMode(prev => !prev), []);
 
-    const handlers = useDataHandlers(setData, setModal, setNewInputs, newInputs, config);
+    const handlers = useDataHandlers(setData, setModal, setNewInputs, newInputs, config, setShowElectiveModal);
     const dragHandlers = useMemo(() => ({ draggedItem, setDraggedItem, canDrag, setCanDrag, handleDragStart: (cat, idx) => setDraggedItem({ cat, index: idx }), handleDragEnter: (cat, targetIndex) => { if (!draggedItem || draggedItem.cat !== cat || draggedItem.index === targetIndex || data[cat].dragDisabled) return; if (data[cat].items[targetIndex].fixed) return; const newItems = [...data[cat].items]; const [removed] = newItems.splice(draggedItem.index, 1); newItems.splice(targetIndex, 0, removed); setData(prev => ({ ...prev, [cat]: { ...prev[cat], items: newItems } })); setDraggedItem({ cat, index: targetIndex }); } }), [draggedItem, canDrag, data]);
 
     const stats = useMemo(() => window.calculateStats(data, config), [data, config]);
@@ -807,11 +857,28 @@ const App = () => {
 
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-8 relative">
+            {isAdmin && impersonatedUser && (
+                <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-2 z-[9999] font-bold shadow-lg flex justify-center items-center gap-4">
+                    <span>⚠️ 관리자 모드: 사용자 [{impersonatedUser.userName}] 화면을 보고 있습니다.</span>
+                    <button onClick={handleExitImpersonation} className="bg-white text-red-600 px-3 py-1 rounded-full text-xs hover:bg-red-50 font-black">
+                        관리자 홈으로 복귀
+                    </button>
+                </div>
+            )}
+
             <AlertModal show={modal.show} message={modal.message} level={modal.level} verificationWord={modal.verificationWord} onConfirm={modal.onConfirm} onCancel={modal.onCancel} />
             <ProfileEditModal editStage={editStage} profileForm={profileForm} setProfileForm={setProfileForm} verifyPassword={verifyPassword} setVerifyPassword={setVerifyPassword} profileError={profileError} onVerifyPassword={onVerifyPassword} onUpdateProfile={onUpdateProfile} onCancel={onCancelEdit} isAdmin={false} />
             <ContactModal show={showContact} config={config} contactEmail={userEmail} onClose={onCloseContact} onSubmit={handleInquirySubmit} />
             
             <NoticeModal show={showNoticeModal} notices={notices} onClose={handleCloseNotice} />
+
+            {/* [신규] 전공선택 모달 추가 */}
+            <MajorElectiveModal 
+                show={showElectiveModal} 
+                onClose={() => setShowElectiveModal(false)} 
+                currentItems={data.physics.items} 
+                onUpdate={handleElectiveUpdate} 
+            />
 
             {/* [NEW] 튜토리얼 모달 */}
             <TutorialModal show={showTutorial} onClose={handleTutorialClose} />

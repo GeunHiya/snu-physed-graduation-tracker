@@ -216,14 +216,20 @@ window.AuthScreen = React.memo(({ onLoginSuccess, onGuestLogin, guestData, guest
                     config: finalConfig,
                     data: initialData,
                     lastSessionId: newSessionId,
-                    isAdmin: finalStudentId === 'admin',
-                    isLocked: false 
+                    // [중요] Firestore 규칙 준수를 위해 isAdmin, isLocked 필드 제거
+                    // 규칙: !request.resource.data.keys().hasAny(['isAdmin', 'isLocked'])
+                    // 값이 false여도 키가 존재하면 규칙 위반으로 생성 거부됨.
                 };
 
                 batch.set(userRef, userData, { merge: true });
 
+                // [수정] public_users 저장 시 uid 필드 추가 (Firestore 규칙 준수)
                 const publicRef = db.collection("public_users").doc(finalStudentId);
-                batch.set(publicRef, { email: fullEmail, taken: true });
+                batch.set(publicRef, { 
+                    email: fullEmail, 
+                    taken: true,
+                    uid: userCred.user.uid // <-- 필수 필드
+                });
 
                 await batch.commit();
                 await window.logAccess(userCred.user.uid, name, finalStudentId, 'LOGIN');

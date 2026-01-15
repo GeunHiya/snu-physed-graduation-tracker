@@ -152,6 +152,20 @@ window.CourseList = React.memo(({
                                             </div>
                                         );
                                     })}
+
+                                    {/* [추가] 리스트 반복문(map)이 끝난 직후, 여기에 코드를 넣어주세요 */}
+                                    {ck === 'physics' && (
+                                        <div className="px-3 md:px-6 pb-2">
+                                            <button 
+                                                onClick={handlers.handleElectiveModalOpen}
+                                                className="w-full py-3 px-4 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl font-black text-sm hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors flex items-center justify-center gap-2 border border-indigo-100 dark:border-indigo-900/30 dashed-border"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                                                전공선택 과목 담기 (체크박스)
+                                            </button>
+                                        </div>
+                                    )}
+
                                     {!data[ck].dragDisabled && (
                                         <div className="p-4 md:p-8 bg-indigo-50/30 dark:bg-indigo-900/10 flex flex-col md:flex-row gap-2 md:gap-3">
                                             <input type="text" placeholder="새 항목..." value={newInputs[ck].name} onChange={e => setNewInputs(p => ({ ...p, [ck]: { ...p[ck], name: e.target.value } }))} onKeyDown={e => e.key === 'Enter' && addNew(ck)} className="flex-1 px-4 py-3 rounded-xl md:rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-sm font-bold outline-none shadow-sm focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" />

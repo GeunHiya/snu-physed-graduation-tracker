@@ -17,6 +17,31 @@ window.COMPUTER_OPTIONS = ["컴퓨팅 기초", "컴퓨팅 핵심", "컴퓨팅 �
 window.VERITAS_OPTIONS = ["베리타스 강좌1", "베리타스 강좌2", "베리타스 실천"];
 window.KEYS_OPTIONS = ["문화 해석과 상상", "역사적 탐구와 철학적 사유", "인간의 이해와 사회 분석", "과학적 사고와 응용"];
 
+// [신규] 교직 과목 목록
+window.TEACHING_SUBJECTS = [
+    "생활지도 및 상담",
+    "교육심리",
+    "교육철학 및 교육사",
+    "교육사회",
+    "교육행정 및 교육경영",
+    "교육방법 및 교육공학",
+    "교육과정",
+    "교육평가"
+];
+
+// [신규] 물리교육과 전선 선택 항목 목록
+window.PHYSICS_ELECTIVES = [
+    "물리수학 및 교육1",
+    "물리수학 및 교육2",
+    "역학 및 교육2",
+    "전자기 및 교육2",
+    "양자물리 및 교육2",
+    "물리학 개념의 역사적 발달",
+    "교사를 위한 과학사",
+    "전자물리 및 교육",
+    "음향학탐구 및 교육"
+];
+
 window.DEFAULT_CONFIG = { userName: "", studentYear: 22, majorPath: "single", secondMajorTitle: "" };
 window.BASE_DATA = {
     general: { title: "교양", target: 41, items: [] },
@@ -68,7 +93,11 @@ window.getGeneralDataByYear = (year) => {
         
         // 19학번 이후: 대학글쓰기 2 (2학점)
         if (y >= 19) {
-            writingItems.push({ id: 'g_w2', name: '대학 글쓰기 2 : 과학과 기술 글쓰기', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, deleteMsg: "과학논리 및 논술을 이수하였나요?" });
+            writingItems.push({ 
+                id: 'g_w2', name: '대학 글쓰기 2 : 과학과 기술 글쓰기', completed: false, credits: 2, 
+                fixed: true, lockCredits: true, fixedName: true, 
+                deleteMsg: "과학논리 및 논술을 수강하였거나 수강하실 예정입니까?" 
+            });
         }
     }
 
@@ -135,34 +164,35 @@ window.getPhysicsDataByYear = (year) => {
         { id: 'p12', name: '물리교육론', completed: false, credits: 3, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
     ];
 
+    let electives = [];
+
     if (y >= 14 && y <= 18) {
-        // [변경] 14-18학번: 과논논 필수, 선택과목 1개(이름 수정)
-        return [
-            ...common,
+        electives = [
             { id: 'p_kwanon', name: '과학 논리 및 논술', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
             { id: 'p_sel1', name: '[교과교육 선택]', completed: false, credits: 0, fixed: true, lockCredits: true, selectable: true, lockDelete: true, limitedChoices: true }
         ];
     } else {
-        // 그 외 학번: 기본 2개 선택
-        return [
-            ...common,
+        electives = [
             { id: 'p_sel1', name: '[교과교육 선택 1]', completed: false, credits: 0, fixed: true, lockCredits: true, selectable: true, lockDelete: true },
             { id: 'p_sel2', name: '[교과교육 선택 2]', completed: false, credits: 0, fixed: true, lockCredits: true, selectable: true, lockDelete: true }
         ];
     }
+
+    return [...common, ...electives];
 };
 
 window.getTeachingDataByYear = (year) => {
     // 4자리 연도 -> 2자리 변환
     const y = year > 2000 ? year % 100 : year;
 
+    // [변경] 교직 과목 5개 입력 -> 선택박스 타입으로 변경
     const basicItems = [
         { id: 't1', name: '교육학개론', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
-        { id: 'ts1', name: '', placeholder: '입력...', completed: false, credits: 2, lockCredits: true, lockDelete: true },
-        { id: 'ts2', name: '', placeholder: '입력...', completed: false, credits: 2, lockCredits: true, lockDelete: true },
-        { id: 'ts3', name: '', placeholder: '입력...', completed: false, credits: 2, lockCredits: true, lockDelete: true },
-        { id: 'ts4', name: '', placeholder: '입력...', completed: false, credits: 2, lockCredits: true, lockDelete: true },
-        { id: 'ts5', name: '', placeholder: '입력...', completed: false, credits: 2, lockCredits: true, lockDelete: true },
+        { id: 'ts1', name: '', type: 'teachingSelect', completed: false, credits: 2, lockCredits: true, lockDelete: true },
+        { id: 'ts2', name: '', type: 'teachingSelect', completed: false, credits: 2, lockCredits: true, lockDelete: true },
+        { id: 'ts3', name: '', type: 'teachingSelect', completed: false, credits: 2, lockCredits: true, lockDelete: true },
+        { id: 'ts4', name: '', type: 'teachingSelect', completed: false, credits: 2, lockCredits: true, lockDelete: true },
+        { id: 'ts5', name: '', type: 'teachingSelect', completed: false, credits: 2, lockCredits: true, lockDelete: true },
         { id: 't6', name: '교직실무', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
         { id: 't7', name: '특수교육학개론', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
         { id: 't8', name: '학교폭력예방 및 학생의 이해', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, lockDelete: true },
@@ -207,7 +237,8 @@ window.calculateStats = (data, config) => {
         else if (y >= 19 && y <= 20) ge = 39;
         else if (y >= 21 && y <= 22) ge = 41;
         else if (y >= 23 && y <= 24) ge = 42;
-        else ge = 39;
+        else if (y >= 25) ge = 40;
+        else ge = 40;
 
         let tc = y <= 23 ? 22 : 23; 
         let pri = majorPath === 'single' ? 60 : 52;
@@ -247,8 +278,11 @@ window.calculateRemaining = (data, config) => {
         if (i.type === 'foreign1' || i.type === 'foreign2') nameStr = i.subName === '면제' || i.subName === '제2외국어' || (i.type === 'foreign2' && i.subName === '') ? `외국어: ${i.subName} ${i.name ? `(${i.name})` : ''}` : `외국어: ${i.subName || i.name}`;
         if (i.type === 'msSet') nameStr = `${i.name}: ${i.subName}`;
         if (i.type === 'core' || i.type === 'coreFixed' || i.type === 'pe' || i.type === 'computer' || i.type === 'veritas' || i.type === 'keys') nameStr = `${i.prefix}: ${i.name}`;
+        // [신규] 전공선택 트리거는 표시 제외
+        if (i.type === 'majorElectiveTrigger') return null;
+
         return { ...i, displayName: nameStr, catTitle: k === 'indEng' ? `${config.secondMajorTitle} (제2전공)` : data[k].title, catKey: k };
-    }));
+    })).filter(Boolean); // filter null
     return config.majorPath === 'single' ? list.filter(i => i.catKey !== 'indEng' && i.catKey !== 'shared') : list;
 };
 

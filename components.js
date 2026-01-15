@@ -23,7 +23,7 @@ window.Icons = {
 
 // --- 입력 필드 렌더러 ---
 window.CourseInputRenderer = React.memo(({ i, ck, handlers, getForeign2Options, studentYear, data }) => {
-    const { handleForeignChange, updateName, handleMathChange, handleMSChange, handleCorePrefixChange, handleSubjectSelect, handleBasicEnglishYearChange, handleEnglish1420Change } = handlers;
+    const { handleForeignChange, updateName, handleMathChange, handleMSChange, handleCorePrefixChange, handleSubjectSelect, handleBasicEnglishYearChange, handleEnglish1420Change, handleElectiveModalOpen } = handlers;
     
     // 4자리 -> 2자리 변환
     const y = studentYear > 2000 ? studentYear % 100 : studentYear;
@@ -34,6 +34,45 @@ window.CourseInputRenderer = React.memo(({ i, ck, handlers, getForeign2Options, 
     const colonClass = "hidden md:block text-slate-400 dark:text-slate-500 shrink-0";
 
     const englishSubjects = ['대학영어 1', '대학영어 2', '고급영어'];
+
+    // [신규] 교직 과목 선택박스 렌더링
+    if (i.type === 'teachingSelect') {
+        // 같은 그룹(teaching) 내의 다른 teachingSelect 항목들의 현재 값을 수집
+        const currentSelections = data[ck].items
+            .filter(item => item.type === 'teachingSelect' && item.id !== i.id)
+            .map(item => item.name);
+
+        // 이미 선택된 항목은 제외하고 옵션 생성
+        const availableOptions = TEACHING_SUBJECTS.filter(opt => !currentSelections.includes(opt));
+
+        return (
+            <div className={containerClass}>
+                <select value={i.name} onChange={(e) => updateName(ck, i.id, e.target.value)} className={`${selectClass} w-full`}>
+                    <option value="" disabled>과목 선택</option>
+                    {/* 현재 선택된 값이 있다면 그 값은 옵션에 포함 (그래야 표시됨) */}
+                    {i.name && !availableOptions.includes(i.name) && <option value={i.name}>{i.name}</option>}
+                    {availableOptions.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                </select>
+            </div>
+        );
+    }
+
+    // [신규] 전공선택 팝업 트리거 버튼
+    if (i.type === 'majorElectiveTrigger') {
+        return (
+            <div className="w-full">
+                <button 
+                    onClick={handleElectiveModalOpen}
+                    className="w-full py-2 px-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl font-black text-sm hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors flex items-center justify-center gap-2 border border-indigo-100 dark:border-indigo-900/30"
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    전공선택 과목 담기 (체크박스)
+                </button>
+            </div>
+        );
+    }
 
     if (i.id === 'g_be') {
         if (y >= 24) return <div className={containerClass}><span className="text-slate-700 dark:text-slate-200 shrink-0">기초 영어</span></div>;
@@ -99,7 +138,7 @@ window.CourseInputRenderer = React.memo(({ i, ck, handlers, getForeign2Options, 
 });
 
 // 데이터 조작 핸들러 훅
-window.useDataHandlers = (setData, setModal, setNewInputs, newInputs, config) => {
+window.useDataHandlers = (setData, setModal, setNewInputs, newInputs, config, setShowElectiveModal) => {
     const { useCallback } = React;
 
     const toggleItem = useCallback((ck, id) => setData(prev => ({ ...prev, [ck]: { ...prev[ck], items: prev[ck].items.map(i => i.id === id ? { ...i, completed: !i.completed } : i) } })), [setData]);
@@ -123,6 +162,10 @@ window.useDataHandlers = (setData, setModal, setNewInputs, newInputs, config) =>
             }
         }));
     }, [setData]);
+
+    const handleElectiveModalOpen = useCallback(() => {
+        if (setShowElectiveModal) setShowElectiveModal(true);
+    }, [setShowElectiveModal]);
 
     const deleteItem = useCallback((ck, id, data) => { 
         const item = data[ck].items.find(i => i.id === id); 
@@ -169,7 +212,9 @@ window.useDataHandlers = (setData, setModal, setNewInputs, newInputs, config) =>
                     if (!newGeneralItems.some(i => i.id === 'g_w2')) {
                         newGeneralItems.splice(w1Idx + 1, 0, { 
                             id: 'g_w2', name: '대학 글쓰기 2 : 과학과 기술 글쓰기', completed: false, credits: 2, 
-                            fixed: true, lockCredits: true, fixedName: true, deleteMsg: "과학논리 및 논술을 이수하였나요?" 
+                            fixed: true, lockCredits: true, fixedName: true, 
+                            // [수정] 복구 메시지 변경 반영
+                            deleteMsg: "과학논리 및 논술을 수강하였거나 수강하실 예정입니까?" 
                         });
                     }
 
@@ -204,7 +249,11 @@ window.useDataHandlers = (setData, setModal, setNewInputs, newInputs, config) =>
                 if (id === 'g_wb') {
                     const writingItems = [
                         { id: 'g_w1', name: '대학글쓰기 1', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, lockDelete: true, deleteMsg: "제1영역에서 1개 교과목(3학점)을 수강해야 합니다." },
-                        { id: 'g_w2', name: '대학 글쓰기 2 : 과학과 기술 글쓰기', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, deleteMsg: "대학글쓰기 2를 수강하지 않았나요?" }
+                        { 
+                            id: 'g_w2', name: '대학 글쓰기 2 : 과학과 기술 글쓰기', completed: false, credits: 2, fixed: true, lockCredits: true, fixedName: true, 
+                            // [수정] 메시지 변경 반영
+                            deleteMsg: "대학글쓰기 2를 수강하지 않았나요?" 
+                        }
                     ];
                     const targetIdx = newItems.findIndex(i => i.id === 'g_be') > -1 ? newItems.findIndex(i => i.id === 'g_be') : 0;
                     newItems.splice(targetIdx, 0, ...writingItems);
@@ -248,6 +297,6 @@ window.useDataHandlers = (setData, setModal, setNewInputs, newInputs, config) =>
     const handleSubjectSelect = useCallback((ck, id, selectedName) => { const option = PHYSICS_ED_CHOICES.find(o => o.name === selectedName); setData(prev => ({ ...prev, [ck]: { ...prev[ck], items: prev[ck].items.map(i => i.id === id ? { ...i, name: option.name, credits: option.credits } : i) } })); }, [setData]);
 
     return {
-        toggleItem, toggleMultiCheck, updateCredits, updateName, toggleRecommended, handleMathChange, handleMSChange, handleCorePrefixChange, handleForeignChange, handleBasicEnglishYearChange, handleEnglish1420Change, deleteItem, addNew, handleSubjectSelect
+        toggleItem, toggleMultiCheck, updateCredits, updateName, toggleRecommended, handleMathChange, handleMSChange, handleCorePrefixChange, handleForeignChange, handleBasicEnglishYearChange, handleEnglish1420Change, deleteItem, addNew, handleSubjectSelect, handleElectiveModalOpen
     };
 };
