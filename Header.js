@@ -187,7 +187,7 @@ window.Header = React.memo(({ user, config, setConfig, stats, onLogout, onReset,
                                                 </button>
                                                 
                                                 {isGuest && (
-                                                    <button onClick={() => handleMenuClick(onLogout)} className="w-full text-left px-4 py-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center gap-2">
+                                                    <button onClick={() => handleMenuClick(onLogout)} className="w-full text-left px-4 py-3 rounded-2xl hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 dark:text-red-400 text-xs font-bold flex items-center gap-2">
                                                         <span>👋</span> 게스트 종료 (나가기)
                                                     </button>
                                                 )}
