@@ -457,3 +457,83 @@ window.MajorElectiveModal = React.memo(({ show, onClose, currentItems, onUpdate 
         </div>
     );
 });
+
+window.SecondMajorModal = React.memo(({ show, onClose, config, onUpdate }) => {
+    const { useState, useEffect } = React;
+    const [type, setType] = useState('single');
+    const [title, setTitle] = useState('');
+
+    useEffect(() => {
+        if (show) {
+            setType(config.majorPath);
+            setTitle(config.secondMajorTitle || '');
+        }
+    }, [show, config]);
+
+    const handleSave = () => {
+        onUpdate(type, title);
+        onClose();
+    };
+
+    if (!show) return null;
+
+    return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in">
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-50 dark:border-slate-700">
+                    <div className="bg-indigo-50 dark:bg-indigo-900/30 p-2.5 rounded-full text-indigo-600 dark:text-indigo-400">
+                        <Icons.Layers />
+                    </div>
+                    <h3 className="text-xl font-black text-slate-800 dark:text-slate-100">전공 과정 설정</h3>
+                </div>
+
+                <div className="space-y-5">
+                    <div>
+                        <label className="block text-xs text-slate-400 mb-2 ml-1">이수 과정 선택</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {[
+                                { val: 'single', label: '심화전공' },
+                                { val: 'double', label: '복수전공' },
+                                { val: 'minor', label: '부전공' }
+                            ].map(opt => (
+                                <button
+                                    key={opt.val}
+                                    onClick={() => setType(opt.val)}
+                                    className={`py-3 rounded-xl text-sm font-black transition-all ${type === opt.val ? 'bg-indigo-600 text-white shadow-lg scale-105' : 'bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600'}`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {(type === 'double' || type === 'minor') && (
+                        <div className="animation-fade-in">
+                            <label className="block text-xs text-slate-400 mb-2 ml-1">전공명 입력</label>
+                            <input 
+                                type="text" 
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 dark:text-white font-bold placeholder:font-normal"
+                                placeholder="예: 수학교육과, 컴퓨터공학부"
+                            />
+                        </div>
+                    )}
+
+                    <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                        💡 설정한 내용은 우측 상단 <span className="font-bold whitespace-nowrap inline-flex items-center align-bottom">설정(<svg className="w-3 h-3 mx-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>)</span> 메뉴에서도 언제든지 다시 변경할 수 있습니다.
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                        <button onClick={onClose} className="flex-1 py-3.5 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors font-bold">
+                            취소
+                        </button>
+                        <button onClick={handleSave} className="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 font-black">
+                            확인
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+});

@@ -374,6 +374,7 @@ const App = () => {
     const [profileError, setProfileError] = useState('');
     const [newInputs, setNewInputs] = useState({ general: { name: '', credits: 3 }, teaching: { name: '', credits: 2 }, physics: { name: '', credits: 3 }, indEng: { name: '', credits: 3 }, shared: { name: '', credits: 3 }, etcGrad: { name: '', credits: 0 }, elective: { name: '', credits: 3 } });
     const sectionRefs = { general: useRef(null), teaching: useRef(null), physics: useRef(null), indEng: useRef(null), shared: useRef(null), etcGrad: useRef(null), elective: useRef(null), header: useRef(null) };
+    const [showSecondMajorModal, setShowSecondMajorModal] = useState(false);
     
     const [isGuestSignup, setIsGuestSignup] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -383,6 +384,11 @@ const App = () => {
     const [notices, setNotices] = useState([]);
     const [showNoticeModal, setShowNoticeModal] = useState(false);
     const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
+
+    // [신규] 복수전공 업데이트 핸들러
+    const handleSecondMajorUpdate = useCallback((type, title) => {
+        setConfig(prev => ({ ...prev, majorPath: type, secondMajorTitle: title }));
+    }, []);
 
     // [신규] 전공선택 모달 상태
     const [showElectiveModal, setShowElectiveModal] = useState(false);
@@ -880,6 +886,14 @@ const App = () => {
                 onUpdate={handleElectiveUpdate} 
             />
 
+            {/* [신규] 복수전공 모달 렌더링 */}
+            <SecondMajorModal 
+                show={showSecondMajorModal}
+                onClose={() => setShowSecondMajorModal(false)}
+                config={config}
+                onUpdate={handleSecondMajorUpdate}
+            />
+
             {/* [NEW] 튜토리얼 모달 */}
             <TutorialModal show={showTutorial} onClose={handleTutorialClose} />
 
@@ -895,7 +909,13 @@ const App = () => {
                 toggleDarkMode={toggleDarkMode}
             />
             
-            <Dashboard config={config} data={data} stats={stats} scrollToSection={scrollToSection} />
+            <Dashboard 
+                config={config} 
+                data={data} 
+                stats={stats} 
+                scrollToSection={scrollToSection} 
+                onOpenSecondMajorModal={() => setShowSecondMajorModal(true)} 
+            />
             <CourseList config={config} data={data} stats={stats} remaining={remaining} sectionRefs={sectionRefs} dragHandlers={dragHandlers} handlers={handlers} newInputs={newInputs} setNewInputs={setNewInputs} addNew={(ck) => handlers.addNew(ck, data)} deleteItem={(ck, id) => handlers.deleteItem(ck, id, data)} getForeign2Options={getForeign2Options} toggleItem={handlers.toggleItem} toggleMultiCheck={handlers.toggleMultiCheck} updateCredits={handlers.updateCredits} toggleRecommended={handlers.toggleRecommended} handleSectionReset={handleSectionReset} />
             <Footer onOpenContact={() => setShowContact(true)} />
             <button onClick={() => scrollToSection('top')} className={`fixed bottom-8 right-8 p-4 bg-indigo-600 text-white rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95 z-[100] ${showBackToTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`} title="맨 위로"><Icons.ArrowUp /></button>
