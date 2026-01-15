@@ -2,7 +2,7 @@
 
 window.Dashboard = React.memo(({ config, data, stats, scrollToSection, onOpenSecondMajorModal }) => {
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-5 mb-8 md:mb-12 text-slate-800 dark:text-slate-100 font-bold">
+        <div id="dashboard-area" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-5 mb-8 md:mb-12 text-slate-800 dark:text-slate-100 font-bold">
             {['general', 'physics', 'indEng', 'teaching', 'etcGrad'].map(key => {
                 // 심화전공일 때 indEng(제2전공) 카드는 숨김 (대신 아래에서 + 버튼으로 대체)
                 if (key === 'indEng' && config.majorPath === 'single') return null;

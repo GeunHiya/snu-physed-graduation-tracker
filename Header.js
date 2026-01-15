@@ -1,5 +1,4 @@
-window.Header = React.memo(({ user, config, setConfig, stats, onLogout, onReset, onDeleteAccount, onOpenEditProfile, onDownloadPDF, sectionRef, isGuest, onGuestYearChange, onGuestSignup, hasUnreadNotice, onOpenNotice, isDarkMode, toggleDarkMode }) => {
-    const { useState, useRef, useEffect, useCallback } = React;
+window.Header = React.memo(({ user, config, setConfig, stats, onLogout, onReset, onDeleteAccount, onOpenEditProfile, onDownloadPDF, sectionRef, isGuest, onGuestYearChange, onGuestSignup, hasUnreadNotice, onOpenNotice, isDarkMode, toggleDarkMode, onOpenTutorial }) => {    const { useState, useRef, useEffect, useCallback } = React;
     const [showUserMenu, setShowUserMenu] = useState(false);
     const userMenuRef = useRef(null);
 
@@ -41,7 +40,7 @@ window.Header = React.memo(({ user, config, setConfig, stats, onLogout, onReset,
 
     return (
         <React.Fragment>
-            <div ref={sectionRef} className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] card-shadow border border-slate-100 dark:border-slate-700 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10 mb-8 md:mb-12 transition-colors">
+            <div id="header-profile-area" ref={sectionRef} className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] card-shadow border border-slate-100 dark:border-slate-700 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10 mb-8 md:mb-12 transition-colors">
                 <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto">
                     <div className={`w-14 h-14 md:w-16 md:h-16 rounded-[1.2rem] flex items-center justify-center text-white shadow-xl rotate-3 transition-transform hover:rotate-6 ${isGuest ? 'bg-emerald-500 shadow-emerald-200 dark:shadow-none' : 'bg-indigo-600 shadow-indigo-200 dark:shadow-none'}`}>
                         {isGuest ? <Icons.User /> : <Icons.Cap />}
@@ -115,6 +114,7 @@ window.Header = React.memo(({ user, config, setConfig, stats, onLogout, onReset,
 
                             <div className="relative" ref={userMenuRef}>
                                 <button 
+                                    id="header-settings-btn"
                                     onClick={() => setShowUserMenu(!showUserMenu)} 
                                     className="w-12 h-12 md:w-14 md:h-14 rounded-full border-4 border-indigo-50 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-600 hover:text-indigo-500 dark:hover:text-indigo-400 hover:border-indigo-200 dark:hover:border-slate-500 transition-all shadow-sm relative"
                                     aria-label="설정"
@@ -153,6 +153,10 @@ window.Header = React.memo(({ user, config, setConfig, stats, onLogout, onReset,
                                                 {hasUnreadNotice && (
                                                     <span className="w-2 h-2 bg-red-500 rounded-full group-hover:scale-125 transition-transform"></span>
                                                 )}
+                                            </button>
+
+                                            <button onClick={() => handleMenuClick(onOpenTutorial)} className="w-full text-left px-4 py-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center gap-2">
+                                                <span>💡</span> 튜토리얼 다시보기
                                             </button>
 
                                             {isGuest && (

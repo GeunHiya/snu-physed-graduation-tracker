@@ -109,7 +109,7 @@ window.CourseList = React.memo(({
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10 font-bold">
-                <div className="lg:col-span-2 space-y-6 md:space-y-10">
+                <div id="course-list-area" className="lg:col-span-2 space-y-6 md:space-y-10">
                     {SECTION_ORDER.map(ck => {
                         if ((ck === 'indEng' || ck === 'shared') && config.majorPath === 'single') return null;
                         const sectionTitle = ck === 'indEng' ? `${config.secondMajorTitle || '제2전공'} (${config.majorPath === 'double' ? '복수전공' : '부전공'})` : data[ck].title;
@@ -185,6 +185,7 @@ window.CourseList = React.memo(({
                 
                 <div className="space-y-6 md:space-y-8 font-black">
                     <div 
+                        id="remaining-area"
                         onClick={() => setIsExpanded(true)}
                         className="bg-slate-800 dark:bg-slate-800 text-white p-6 md:p-9 rounded-[2rem] md:rounded-[3.5rem] shadow-2xl sticky top-8 border-4 border-slate-700/50 dark:border-slate-600/50 cursor-pointer hover:bg-slate-750 transition-colors group"
                     >

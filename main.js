@@ -374,7 +374,6 @@ const App = () => {
     const [profileError, setProfileError] = useState('');
     const [newInputs, setNewInputs] = useState({ general: { name: '', credits: 3 }, teaching: { name: '', credits: 2 }, physics: { name: '', credits: 3 }, indEng: { name: '', credits: 3 }, shared: { name: '', credits: 3 }, etcGrad: { name: '', credits: 0 }, elective: { name: '', credits: 3 } });
     const sectionRefs = { general: useRef(null), teaching: useRef(null), physics: useRef(null), indEng: useRef(null), shared: useRef(null), etcGrad: useRef(null), elective: useRef(null), header: useRef(null) };
-    const [showSecondMajorModal, setShowSecondMajorModal] = useState(false);
     
     const [isGuestSignup, setIsGuestSignup] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -385,61 +384,6 @@ const App = () => {
     const [showNoticeModal, setShowNoticeModal] = useState(false);
     const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
 
-    // [신규] 복수전공 업데이트 핸들러
-    const handleSecondMajorUpdate = useCallback((type, title) => {
-        setConfig(prev => ({ ...prev, majorPath: type, secondMajorTitle: title }));
-    }, []);
-
-    // [신규] 전공선택 모달 상태
-    const [showElectiveModal, setShowElectiveModal] = useState(false);
-
-    const handleElectiveUpdate = useCallback((selectedNames) => {
-        setData(prev => {
-            const currentItems = prev.physics.items;
-            
-            // 기존 아이템 중 '선택 리스트'에 없는 전공선택 과목 제거
-            // (다른 과목들은 건드리지 않음)
-            const newPhysicsItems = currentItems.filter(item => {
-                // 전공선택 리스트에 없는 과목(필수 과목 등)은 유지
-                if (!PHYSICS_ELECTIVES.includes(item.name)) return true;
-                // 전공선택 리스트에 있다면, 이번에 선택된 목록에 포함되어야 유지
-                return selectedNames.includes(item.name);
-            });
-
-            // 선택된 과목 중 현재 없는 과목 추가
-            selectedNames.forEach(name => {
-                const exists = newPhysicsItems.some(i => i.name === name);
-                if (!exists) {
-                    const newItem = {
-                        id: `p_elect_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                        name: name,
-                        completed: false,
-                        credits: 3, // 3학점 고정
-                        fixed: true, // 순서 변경 불가 (드래그 불가)
-                        lockCredits: true, // 학점 수정 불가
-                        lockDelete: false, // 삭제 가능
-                    };
-                    
-                    // 트리거 버튼(p_elect_trigger) 바로 앞에 삽입
-                    const triggerIndex = newPhysicsItems.findIndex(i => i.id === 'p_elect_trigger');
-                    if (triggerIndex !== -1) {
-                        newPhysicsItems.splice(triggerIndex, 0, newItem);
-                    } else {
-                        newPhysicsItems.push(newItem);
-                    }
-                }
-            });
-
-            return {
-                ...prev,
-                physics: {
-                    ...prev.physics,
-                    items: newPhysicsItems
-                }
-            };
-        });
-    }, []);
-
     // [NEW] 튜토리얼 관련 state
     const [showTutorial, setShowTutorial] = useState(false);
 
@@ -448,6 +392,9 @@ const App = () => {
         return localStorage.getItem('theme') === 'dark' || 
                (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
     });
+
+    // [신규] 복수전공 모달 상태
+    const [showSecondMajorModal, setShowSecondMajorModal] = useState(false);
 
     useEffect(() => {
         if (darkMode) {
@@ -461,7 +408,44 @@ const App = () => {
 
     const toggleDarkMode = useCallback(() => setDarkMode(prev => !prev), []);
 
+    // [신규] 전공선택 과목 다중 선택 모달 상태
+    const [showElectiveModal, setShowElectiveModal] = useState(false);
+
+    // handlers에 showElectiveModal 상태 변경 함수를 전달해야 하므로 훅 호출 수정
     const handlers = useDataHandlers(setData, setModal, setNewInputs, newInputs, config, setShowElectiveModal);
+    
+    // [신규] 전공선택 과목 업데이트 핸들러
+    const handleElectiveUpdate = useCallback((selectedNames) => {
+        setData(prev => {
+            const currentItems = prev.physics.items;
+            const newItems = [...currentItems];
+            
+            // 기존 선택된 과목들 중, 이번 선택에서 제외된 것 삭제
+            // (단, 수동으로 추가한 과목이나 다른 과목은 건드리지 않음. PHYSICS_ELECTIVES 목록에 있는 것만 관리)
+            const toRemove = PHYSICS_ELECTIVES.filter(name => !selectedNames.includes(name));
+            const filteredItems = newItems.filter(i => !toRemove.includes(i.name));
+
+            // 새로 선택된 과목들 중, 아직 없는 것 추가
+            selectedNames.forEach(name => {
+                if (!filteredItems.some(i => i.name === name)) {
+                    // 트리거 버튼(p_elect_trigger) 바로 위에 추가하기 위해 인덱스 찾기
+                    const triggerIndex = filteredItems.findIndex(i => i.id === 'p_elect_trigger');
+                    const insertIndex = triggerIndex !== -1 ? triggerIndex : filteredItems.length;
+
+                    filteredItems.splice(insertIndex, 0, {
+                        id: `p_elect_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        name: name,
+                        completed: false,
+                        credits: 3, // 전공선택은 보통 3학점
+                        selectable: false // 이미 선택된 고정 과목처럼 취급
+                    });
+                }
+            });
+
+            return { ...prev, physics: { ...prev.physics, items: filteredItems } };
+        });
+    }, []);
+
     const dragHandlers = useMemo(() => ({ draggedItem, setDraggedItem, canDrag, setCanDrag, handleDragStart: (cat, idx) => setDraggedItem({ cat, index: idx }), handleDragEnter: (cat, targetIndex) => { if (!draggedItem || draggedItem.cat !== cat || draggedItem.index === targetIndex || data[cat].dragDisabled) return; if (data[cat].items[targetIndex].fixed) return; const newItems = [...data[cat].items]; const [removed] = newItems.splice(draggedItem.index, 1); newItems.splice(targetIndex, 0, removed); setData(prev => ({ ...prev, [cat]: { ...prev[cat], items: newItems } })); setDraggedItem({ cat, index: targetIndex }); } }), [draggedItem, canDrag, data]);
 
     const stats = useMemo(() => window.calculateStats(data, config), [data, config]);
@@ -551,11 +535,21 @@ const App = () => {
         setShowTutorial(false);
     }, []);
 
+    // [NEW] 튜토리얼 열기 (설정 메뉴에서 호출)
+    const handleOpenTutorial = useCallback(() => {
+        setShowTutorial(true);
+    }, []);
+
     // [NEW] 로그인 성공 콜백 (신규 유저 감지)
     const onLoginSuccess = useCallback((isNewUser = false) => {
         if (isNewUser) {
             setShowTutorial(true);
         }
+    }, []);
+
+    // [신규] 복수전공 업데이트 핸들러
+    const handleSecondMajorUpdate = useCallback((type, title) => {
+        setConfig(prev => ({ ...prev, majorPath: type, secondMajorTitle: title }));
     }, []);
 
     useEffect(() => {
@@ -878,12 +872,15 @@ const App = () => {
             
             <NoticeModal show={showNoticeModal} notices={notices} onClose={handleCloseNotice} />
 
-            {/* [신규] 전공선택 모달 추가 */}
+            {/* [NEW] 튜토리얼 모달 */}
+            <TutorialModal show={showTutorial} onClose={handleTutorialClose} />
+
+            {/* [신규] 전공선택 다중 선택 모달 */}
             <MajorElectiveModal 
                 show={showElectiveModal} 
-                onClose={() => setShowElectiveModal(false)} 
-                currentItems={data.physics.items} 
-                onUpdate={handleElectiveUpdate} 
+                onClose={() => setShowElectiveModal(false)}
+                currentItems={data.physics.items}
+                onUpdate={handleElectiveUpdate}
             />
 
             {/* [신규] 복수전공 모달 렌더링 */}
@@ -893,9 +890,6 @@ const App = () => {
                 config={config}
                 onUpdate={handleSecondMajorUpdate}
             />
-
-            {/* [NEW] 튜토리얼 모달 */}
-            <TutorialModal show={showTutorial} onClose={handleTutorialClose} />
 
             <Header 
                 user={user} config={config} setConfig={setConfig} stats={stats} 
@@ -907,6 +901,7 @@ const App = () => {
                 onOpenNotice={handleOpenNotice}
                 isDarkMode={darkMode}
                 toggleDarkMode={toggleDarkMode}
+                onOpenTutorial={handleOpenTutorial} // [추가] 튜토리얼 다시보기 핸들러 전달
             />
             
             <Dashboard 
@@ -916,9 +911,11 @@ const App = () => {
                 scrollToSection={scrollToSection} 
                 onOpenSecondMajorModal={() => setShowSecondMajorModal(true)} 
             />
+            
             <CourseList config={config} data={data} stats={stats} remaining={remaining} sectionRefs={sectionRefs} dragHandlers={dragHandlers} handlers={handlers} newInputs={newInputs} setNewInputs={setNewInputs} addNew={(ck) => handlers.addNew(ck, data)} deleteItem={(ck, id) => handlers.deleteItem(ck, id, data)} getForeign2Options={getForeign2Options} toggleItem={handlers.toggleItem} toggleMultiCheck={handlers.toggleMultiCheck} updateCredits={handlers.updateCredits} toggleRecommended={handlers.toggleRecommended} handleSectionReset={handleSectionReset} />
             <Footer onOpenContact={() => setShowContact(true)} />
-            <button onClick={() => scrollToSection('top')} className={`fixed bottom-8 right-8 p-4 bg-indigo-600 text-white rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95 z-[100] ${showBackToTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`} title="맨 위로"><Icons.ArrowUp /></button>
+            
+            <button id="back-to-top-btn" onClick={() => scrollToSection('top')} className={`fixed bottom-8 right-8 p-4 bg-indigo-600 text-white rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95 z-[100] ${showBackToTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`} title="맨 위로"><Icons.ArrowUp /></button>
             {window.PDFTemplate && <window.PDFTemplate data={data} config={config} stats={stats} id="pdf-template" />}
         </div>
     );

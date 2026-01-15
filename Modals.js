@@ -269,114 +269,254 @@ window.NoticeModal = React.memo(({ show, notices, onClose }) => {
     );
 });
 
-// [NEW] 튜토리얼 모달
+// [NEW] 몰입형 튜토리얼 모달 (하이라이트 기능 추가)
 window.TutorialModal = React.memo(({ show, onClose }) => {
     const { useState, useEffect, useCallback } = React;
     const [step, setStep] = useState(0);
+    const [targetRect, setTargetRect] = useState(null);
 
     const steps = [
         {
+            target: null, // 중앙 팝업
             title: "환영합니다! 👋",
             content: "서울대학교 물리교육과 졸업 이수 학점 관리 서비스입니다.\n\n복잡한 졸업 요건, 이제 한눈에 확인하고\n간편하게 관리해보세요!",
             icon: <Icons.Cap />
         },
         {
-            title: "설정 및 개인화 ⚙️",
-            content: "상단의 프로필 영역을 눌러보세요.\n\n• 다크 모드 ON/OFF\n• 전공 설정 (복수/부전공)\n• 데이터 PDF 저장 및 초기화\n\n등 다양한 기능을 사용할 수 있습니다.",
-            icon: <Icons.Settings />
+            target: "#header-profile-area", // 프로필 영역
+            title: "나만의 정보 ⚙️",
+            content: "현재 로그인된 사용자의 이름과 학번입니다. 본인 정보가 맞는지 확인해주세요.\n\n(본 서비스는 개인의 학점 이수 현황을 저장하여 편리한 관리를 돕습니다)",
+            position: "bottom"
         },
         {
-            title: "진행률 대시보드 📊",
-            content: "화면 상단의 카드들은 각 영역별 이수 현황을 보여줍니다.\n\n클릭하면 해당 영역으로 스크롤되며,\n모든 학점을 채우면 카드가 초록색으로 변합니다!",
-            icon: <Icons.Target />
+            target: "#header-settings-btn", // 설정 버튼
+            title: "설정 및 메뉴 🛠️",
+            content: "이 버튼을 눌러보세요.\n\n전공 변경(복수/부전공), PDF 저장, 튜토리얼 다시보기, 다크모드 전환 등 다양한 기능을 여기서 이용할 수 있습니다.",
+            position: "bottom" 
         },
         {
-            title: "과목 관리 📝",
-            content: "각 영역(교양, 전공 등)에서 수강한 과목을 체크하세요.\n\n• 빈칸에 과목명 입력 가능\n• ➕ 버튼으로 직접 과목 추가\n• 🗑️ 버튼으로 과목 삭제\n• 드래그 앤 드롭으로 순서 변경",
-            icon: <Icons.Book />
+            target: "#dashboard-area", // 대시보드
+            title: "한눈에 보는 진행률 📊",
+            content: "졸업 요건(교양, 전공, 교직 등)별 달성도가 이곳에 표시됩니다.\n\n각 카드를 클릭하면 해당 목록으로 자동 스크롤됩니다. 100%를 달성하면 초록색으로 변해요!",
+            position: "bottom"
         },
         {
-            title: "수강 예정 목록 확인 🔭",
-            content: "우측(모바일은 하단)의 '수강 예정' 패널을 확인하세요.\n\n남은 과목들을 한곳에 모아 보여줍니다.\n패널을 클릭하면 큰 화면으로 비교할 수 있어요.",
-            icon: <Icons.Layers />
+            // 카드 전체가 아닌 '헤더 부분(div:first-child)'만 타겟팅하여 잘림 방지
+            target: "#course-list-area section:first-of-type > div:first-child", 
+            title: "쉽고 빠른 과목 관리 📝",
+            content: "이미 수강한 과목은 체크(✅)하고, 없는 과목은 아래 입력창에 적어서 추가하세요.\n\n• ➕ 버튼: 직접 과목 추가\n• 🗑️ 버튼: 과목 삭제\n• 드래그: 과목 순서 변경",
+            position: "bottom"
         },
         {
-            title: "준비 되셨나요? 🚀",
-            content: "이제 직접 졸업 요건을 채워나가 보세요.\n\n여러분의 성공적인 졸업을 응원합니다!",
+            target: "#remaining-area h3", // 수강 예정 패널 제목
+            title: "놓친 과목은 없는지? 🔭",
+            content: "졸업을 위해 앞으로 수강해야 할 과목들이 이곳에 자동으로 정리됩니다.\n\n이 패널을 클릭하면 전체 화면으로 상세 목록을 확인할 수 있습니다.",
+            position: "left"
+        },
+        {
+            target: "footer", // Footer
+            title: "문의 및 정보 ℹ️",
+            content: "졸업 사정 기준 확인 링크, 관리자 문의(메일), 개인정보 처리방침 등을 이곳에서 확인할 수 있습니다.",
+            position: "top" 
+        },
+        {
+            target: null, // 마지막
+            title: "이제 시작해보세요! 🚀",
+            content: "직접 졸업 요건을 채워나가며\n여러분의 성공적인 졸업을 계획해보세요.",
             icon: <Icons.Check />
         }
     ];
 
+    // 타겟 요소 위치 계산 함수
+    const updateTargetRect = useCallback(() => {
+        if (!show) return;
+        const currentTargetSelector = steps[step].target;
+        
+        if (currentTargetSelector) {
+            const el = document.querySelector(currentTargetSelector);
+            if (el) {
+                // 요소가 화면에 보이도록 스크롤
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // 스크롤 이동 시간을 고려하여 약간 지연 후 좌표 계산
+                setTimeout(() => {
+                    const rect = el.getBoundingClientRect();
+                    setTargetRect({
+                        top: rect.top,
+                        left: rect.left,
+                        width: rect.width,
+                        height: rect.height,
+                        bottom: rect.bottom,
+                        right: rect.right
+                    });
+                }, 400);
+            } else {
+                setTargetRect(null); // 요소를 못 찾으면 중앙 팝업으로 표시
+            }
+        } else {
+            setTargetRect(null);
+        }
+    }, [step, show]);
+
     useEffect(() => {
-        if (show) setStep(0);
+        if (show) {
+            setStep(0);
+            updateTargetRect();
+        }
     }, [show]);
 
+    useEffect(() => {
+        updateTargetRect();
+        window.addEventListener('resize', updateTargetRect);
+        return () => window.removeEventListener('resize', updateTargetRect);
+    }, [step, updateTargetRect]);
+
     const handleNext = useCallback(() => {
-        if (step < steps.length - 1) setStep(p => p + 1);
-        else onClose();
+        if (step < steps.length - 1) {
+            setStep(p => p + 1);
+        } else {
+            onClose();
+        }
     }, [step, steps.length, onClose]);
+
+    const handlePrev = useCallback(() => {
+        if (step > 0) setStep(p => p - 1);
+    }, [step]);
 
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (!show) return;
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === 'ArrowRight' || e.key === 'Enter') {
                 e.preventDefault();
                 handleNext();
             }
-            if (e.key === 'Escape') {
-                onClose();
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                handlePrev();
             }
+            if (e.key === 'Escape') onClose();
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [show, handleNext, onClose]);
+    }, [show, handleNext, handlePrev, onClose]);
 
     if (!show) return null;
 
     const currentStep = steps[step];
+    const isTargetMode = !!targetRect;
+
+    // 말풍선 위치 스타일 계산
+    const getTooltipStyle = () => {
+        if (!targetRect) return {};
+        const spacing = 20; 
+        const tooltipWidth = Math.min(384, window.innerWidth * 0.9);
+        const tooltipHeight = 250; 
+        const position = currentStep.position || 'bottom';
+        
+        let top, left, transform;
+        const centerX = targetRect.left + targetRect.width / 2;
+        const centerY = targetRect.top + targetRect.height / 2;
+
+        if (position === 'bottom') {
+            top = targetRect.bottom + spacing;
+            left = centerX;
+            transform = 'translateX(-50%)';
+        } else if (position === 'top') {
+            top = targetRect.top - tooltipHeight - spacing;
+            left = centerX;
+            transform = 'translateX(-50%)';
+            if (top < 0) top = targetRect.bottom + spacing;
+        } else if (position === 'left') {
+            top = centerY;
+            left = targetRect.left - tooltipWidth - spacing; 
+            transform = 'translateY(-50%)';
+            if (left < 0) {
+                left = targetRect.right + spacing;
+                transform = 'translateY(-50%)';
+            }
+        }
+
+        const safePadding = 20;
+        
+        // 가로축 화면 이탈 방지
+        if (transform && transform.includes('translateX(-50%)')) {
+            const minX = tooltipWidth / 2 + safePadding;
+            const maxX = window.innerWidth - (tooltipWidth / 2) - safePadding;
+            left = Math.max(minX, Math.min(left, maxX));
+        } else {
+            left = Math.max(safePadding, Math.min(left, window.innerWidth - tooltipWidth - safePadding));
+        }
+
+        // 세로축 화면 이탈 방지
+        const maxTop = window.innerHeight - tooltipHeight - safePadding;
+        if (top > maxTop) top = maxTop;
+        
+        if (transform && transform.includes('translateY(-50%)')) {
+             top = Math.max(tooltipHeight/2 + safePadding, Math.min(top, window.innerHeight - tooltipHeight/2 - safePadding));
+        } else {
+             if (top < safePadding) top = safePadding;
+        }
+
+        return { top, left, transform };
+    };
 
     return (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[300] flex items-center justify-center p-4 animation-fade-in">
-            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl border-2 border-indigo-100 dark:border-slate-600 font-bold relative overflow-hidden">
-                {/* Progress Bar */}
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-100 dark:bg-slate-700">
-                    <div 
-                        className="h-full bg-indigo-500 transition-all duration-300 ease-out"
-                        style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+        <div className="fixed inset-0 z-[300] overflow-hidden">
+            {isTargetMode ? (
+                <div className="absolute inset-0 transition-all duration-500 ease-out" style={{ boxShadow: `inset 0 0 0 2000px rgba(15, 23, 42, 0.75)` }}>
+                    <div className="absolute border-4 border-indigo-400 rounded-2xl transition-all duration-300 ease-out animate-pulse shadow-[0_0_30px_rgba(99,102,241,0.5)]"
+                         style={{
+                             top: targetRect.top - 4,
+                             left: targetRect.left - 4,
+                             width: targetRect.width + 8,
+                             height: targetRect.height + 8,
+                         }}
                     />
                 </div>
+            ) : (
+                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm transition-all duration-500" />
+            )}
 
-                <div className="flex flex-col items-center text-center mt-4">
-                    <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mb-6 shadow-sm text-3xl">
-                        {currentStep.icon}
+            <div 
+                className={`absolute transition-all duration-300 ease-out flex flex-col items-center ${isTargetMode ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
+                style={isTargetMode ? getTooltipStyle() : {}}
+            >
+                <div className={`bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-2xl border-2 border-indigo-100 dark:border-slate-600 font-bold relative animate-slide-up max-w-sm w-[90vw] md:w-[24rem]`}>
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="flex gap-1">
+                                {steps.map((_, i) => (
+                                    <div key={i} className={`w-2 h-2 rounded-full transition-colors ${i === step ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'}`} />
+                                ))}
+                            </div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold ml-1 whitespace-nowrap">{step + 1} / {steps.length}</span>
+                        </div>
+                        <button onClick={onClose} className="text-slate-400 hover:text-indigo-500 transition-colors text-xs font-bold p-1 flex items-center gap-1 -mt-1 -mr-2">✕ 건너뛰기</button>
                     </div>
-                    <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mb-4 tracking-tight">
+
+                    {!isTargetMode && currentStep.icon && (
+                        <div className="flex justify-center mb-4">
+                            <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center text-2xl shadow-sm">
+                                {currentStep.icon}
+                            </div>
+                        </div>
+                    )}
+
+                    <h3 className={`text-xl font-black text-slate-800 dark:text-slate-100 mb-3 tracking-tight ${!isTargetMode && 'text-center'}`}>
                         {currentStep.title}
                     </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap mb-8">
+                    <p className={`text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap mb-6 ${!isTargetMode && 'text-center'}`}>
                         {currentStep.content}
                     </p>
-                </div>
 
-                <div className="flex gap-3">
-                    <button 
-                        onClick={onClose} 
-                        className="flex-1 py-3.5 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors text-sm font-bold"
-                    >
-                        건너뛰기
-                    </button>
-                    <button 
-                        onClick={handleNext} 
-                        className="flex-[2] py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 text-sm font-black"
-                    >
-                        {step === steps.length - 1 ? "시작하기" : "다음"}
-                    </button>
-                </div>
-                
-                <div className="mt-4 text-center">
-                    <p className="text-[10px] text-slate-400 dark:text-slate-600 font-medium">
-                        Enter 키를 눌러 다음으로 이동
-                    </p>
+                    <div className="flex gap-3">
+                        <button onClick={step === 0 ? onClose : handlePrev} className="flex-1 py-3 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors text-sm font-bold">
+                            {step === 0 ? '닫기' : '이전'}
+                        </button>
+                        <button onClick={handleNext} className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 text-sm font-black">
+                            {step === steps.length - 1 ? "시작하기" : "다음"}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
