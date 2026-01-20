@@ -39,13 +39,13 @@ window.AlertModal = React.memo(({ show, message, level = 'info', isDestructive =
 
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in">
-            <div className={`bg-white dark:bg-slate-800 rounded-3xl p-8 w-full shadow-2xl border font-bold text-center transform transition-all scale-100 ${currentStyle.container}`}>
-                <div className="flex justify-center mb-6">
+            <div className={`bg-white dark:bg-slate-800 rounded-[2rem] p-6 md:p-8 w-full shadow-2xl border font-bold text-center transform transition-all scale-100 ${currentStyle.container}`}>
+                <div className="flex justify-center mb-5 md:mb-6">
                     <div className={`p-4 rounded-full font-black ${currentStyle.iconBg}`}>
                         {verificationWord ? <Icons.Shield /> : currentStyle.icon}
                     </div>
                 </div>
-                <h3 className="text-xl mb-4 leading-relaxed whitespace-pre-wrap break-keep text-slate-800 dark:text-slate-100">{message}</h3>
+                <h3 className="text-lg md:text-xl mb-4 leading-relaxed whitespace-pre-wrap break-keep text-slate-800 dark:text-slate-100">{message}</h3>
                 {verificationWord && (
                     <div className="mb-6">
                         <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">아래에 <span className="font-black text-slate-600 dark:text-slate-300">'{verificationWord}'</span>을(를) 입력하세요.</p>
@@ -53,8 +53,8 @@ window.AlertModal = React.memo(({ show, message, level = 'info', isDestructive =
                     </div>
                 )}
                 <div className="flex gap-3">
-                    {onCancel && <button onClick={onCancel} className="flex-1 py-3 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors">{onConfirm ? "취소" : "닫기"}</button>}
-                    {onConfirm && <button onClick={() => onConfirm(input)} disabled={verificationWord && input !== verificationWord} className={`flex-1 py-3 text-white rounded-2xl shadow-lg transition-all active:scale-95 ${verificationWord && input !== verificationWord ? 'bg-slate-300 dark:bg-slate-600 cursor-not-allowed opacity-50 shadow-none' : currentStyle.btnColor}`}>{verificationWord ? "확인" : (currentLevel === 'danger' ? "삭제" : "확인")}</button>}
+                    {onCancel && <button onClick={onCancel} className="flex-1 py-3.5 md:py-3 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors text-sm md:text-base">{onConfirm ? "취소" : "닫기"}</button>}
+                    {onConfirm && <button onClick={() => onConfirm(input)} disabled={verificationWord && input !== verificationWord} className={`flex-1 py-3.5 md:py-3 text-white rounded-2xl shadow-lg transition-all active:scale-95 text-sm md:text-base ${verificationWord && input !== verificationWord ? 'bg-slate-300 dark:bg-slate-600 cursor-not-allowed opacity-50 shadow-none' : currentStyle.btnColor}`}>{verificationWord ? "확인" : (currentLevel === 'danger' ? "삭제" : "확인")}</button>}
                 </div>
             </div>
         </div>
@@ -80,21 +80,31 @@ window.ContactModal = React.memo(({ show, config, contactEmail, onClose, onSubmi
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in">
-            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in overflow-y-auto">
+            <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold relative my-auto">
                 <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-50 dark:border-slate-700">
                     <div className="bg-indigo-50 dark:bg-indigo-900/30 p-2.5 rounded-full text-indigo-600 dark:text-indigo-400"><Icons.Mail /></div>
                     <div><h3 className="text-xl font-black text-slate-800 dark:text-slate-100">문의 / 민원 접수</h3><p className="text-xs text-slate-400 mt-1">관리자에게 메일이 전송됩니다.</p></div>
                 </div>
                 <div className="space-y-4">
-                    <div className="flex gap-4">
-                        <div className="flex-1"><label className="block text-xs text-slate-400 mb-1 ml-1">보내는 사람</label><input type="text" value={config?.userName || ''} readOnly className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 text-sm outline-none cursor-default" /></div>
-                        <div className="flex-1"><label className="block text-xs text-slate-400 mb-1 ml-1">연락처 이메일</label><input type="text" value={contactEmail || ''} readOnly className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 text-sm outline-none cursor-default" /></div>
+                    {/* 모바일에서 세로 배치 (flex-col) */}
+                    <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+                        <div className="flex-1">
+                            <label className="block text-xs text-slate-400 mb-1.5 ml-1">보내는 사람</label>
+                            <input type="text" value={config?.userName || ''} readOnly className="w-full p-3.5 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 text-sm outline-none cursor-default font-bold" />
+                        </div>
+                        <div className="flex-1">
+                            <label className="block text-xs text-slate-400 mb-1.5 ml-1">연락처 이메일</label>
+                            <input type="text" value={contactEmail || ''} readOnly className="w-full p-3.5 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 text-sm outline-none cursor-default font-bold" />
+                        </div>
                     </div>
-                    <div><label className="block text-xs text-slate-400 mb-1 ml-1">문의 내용</label><textarea value={message} onChange={(e) => setMessage(e.target.value)} className="w-full h-32 p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 resize-none text-slate-700 dark:text-slate-200 leading-relaxed custom-scrollbar" placeholder="이곳에 문의하실 내용을 적어주세요. (버그 제보, 건의사항 등)" /></div>
+                    <div>
+                        <label className="block text-xs text-slate-400 mb-1.5 ml-1">문의 내용</label>
+                        <textarea value={message} onChange={(e) => setMessage(e.target.value)} className="w-full h-40 md:h-32 p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 resize-none text-slate-700 dark:text-slate-200 leading-relaxed custom-scrollbar font-medium" placeholder="이곳에 문의하실 내용을 적어주세요. (버그 제보, 건의사항 등)" />
+                    </div>
                     <div className="flex gap-3 mt-4">
-                        <button onClick={onClose} disabled={isSending} className="flex-1 py-3 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors">취소</button>
-                        <button onClick={handleSubmit} disabled={!message.trim() || isSending} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100">{isSending ? "전송 중..." : "보내기"}</button>
+                        <button onClick={onClose} disabled={isSending} className="flex-1 py-3.5 md:py-3 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors">취소</button>
+                        <button onClick={handleSubmit} disabled={!message.trim() || isSending} className="flex-1 py-3.5 md:py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100">{isSending ? "전송 중..." : "보내기"}</button>
                     </div>
                 </div>
             </div>
@@ -120,8 +130,8 @@ window.ProfileEditModal = React.memo(({
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in">
-            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in overflow-y-auto">
+            <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold my-auto">
                 <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-50 dark:border-slate-700">
                     <div className="bg-indigo-50 dark:bg-indigo-900/30 p-2.5 rounded-full text-indigo-600 dark:text-indigo-400"><Icons.Settings /></div>
                     <h3 className="text-xl font-black text-slate-800 dark:text-slate-100">개인정보 수정</h3>
@@ -142,7 +152,7 @@ window.ProfileEditModal = React.memo(({
                                 autoFocus
                             />
                         </div>
-                        {profileError && <p className="text-red-500 dark:text-red-400 text-sm font-black text-center">{profileError}</p>}
+                        {profileError && <p className="text-red-500 dark:text-red-400 text-sm font-black text-center bg-red-50 dark:bg-red-900/20 p-2 rounded-lg">{profileError}</p>}
                         <div className="flex gap-3 mt-4">
                             <button onClick={onCancel} className="flex-1 py-3 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors">취소</button>
                             <button onClick={onVerifyPassword} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95">확인</button>
@@ -157,7 +167,7 @@ window.ProfileEditModal = React.memo(({
                                 value={profileForm.name}
                                 onChange={(e) => setProfileForm(p => ({...p, name: e.target.value}))}
                                 onKeyDown={(e) => handleEnter(e, onUpdateProfile)}
-                                className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 dark:text-white"
+                                className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 dark:text-white font-bold"
                             />
                         </div>
                         <div>
@@ -168,7 +178,7 @@ window.ProfileEditModal = React.memo(({
                                     value={profileForm.email}
                                     onChange={(e) => setProfileForm(p => ({...p, email: e.target.value}))}
                                     onKeyDown={(e) => handleEnter(e, onUpdateProfile)}
-                                    className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 dark:text-white"
+                                    className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 dark:text-white font-bold"
                                     placeholder="변경할 이메일 입력"
                                 />
                             ) : (
@@ -196,20 +206,20 @@ window.ProfileEditModal = React.memo(({
                                     value={profileForm.newPw}
                                     onChange={(e) => setProfileForm(p => ({...p, newPw: e.target.value}))}
                                     onKeyDown={(e) => handleEnter(e, onUpdateProfile)}
-                                    className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 placeholder:text-slate-300 dark:placeholder:text-slate-500 dark:text-white"
-                                    placeholder="새 비밀번호 (변경시에만 입력)"
+                                    className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 placeholder:text-slate-300 dark:placeholder:text-slate-500 dark:text-white font-bold"
+                                    placeholder="새 비밀번호"
                                 />
                                 <input 
                                     type="password" 
                                     value={profileForm.confirmPw}
                                     onChange={(e) => setProfileForm(p => ({...p, confirmPw: e.target.value}))}
                                     onKeyDown={(e) => handleEnter(e, onUpdateProfile)}
-                                    className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 placeholder:text-slate-300 dark:placeholder:text-slate-500 dark:text-white"
+                                    className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 placeholder:text-slate-300 dark:placeholder:text-slate-500 dark:text-white font-bold"
                                     placeholder="새 비밀번호 확인"
                                 />
                             </div>
                         </div>
-                        {profileError && <p className="text-red-500 dark:text-red-400 text-sm font-black text-center">{profileError}</p>}
+                        {profileError && <p className="text-red-500 dark:text-red-400 text-sm font-black text-center bg-red-50 dark:bg-red-900/20 p-2 rounded-lg">{profileError}</p>}
                         <div className="flex gap-3 mt-6">
                             <button onClick={onCancel} className="flex-1 py-3 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors">취소</button>
                             <button onClick={onUpdateProfile} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95">저장하기</button>
@@ -226,7 +236,7 @@ window.NoticeModal = React.memo(({ show, notices, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in">
-            <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold max-h-[80vh] flex flex-col">
+            <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 md:p-8 max-w-lg w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold max-h-[85vh] flex flex-col">
                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50 dark:border-slate-700 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="bg-rose-50 dark:bg-rose-900/30 p-2.5 rounded-full text-rose-500 dark:text-rose-400">
@@ -269,7 +279,7 @@ window.NoticeModal = React.memo(({ show, notices, onClose }) => {
     );
 });
 
-// [NEW] 몰입형 튜토리얼 모달 (하이라이트 기능 추가)
+// [NEW] 몰입형 튜토리얼 모달
 window.TutorialModal = React.memo(({ show, onClose }) => {
     const { useState, useEffect, useCallback } = React;
     const [step, setStep] = useState(0);
@@ -301,7 +311,6 @@ window.TutorialModal = React.memo(({ show, onClose }) => {
             position: "bottom"
         },
         {
-            // 카드 전체가 아닌 '헤더 부분(div:first-child)'만 타겟팅하여 잘림 방지
             target: "#course-list-area section:first-of-type > div:first-child", 
             title: "쉽고 빠른 과목 관리 📝",
             content: "이미 수강한 과목은 체크(✅)하고, 없는 과목은 아래 입력창에 적어서 추가하세요.\n\n• ➕ 버튼: 직접 과목 추가\n• 🗑️ 버튼: 과목 삭제\n• 드래그: 과목 순서 변경",
@@ -310,7 +319,7 @@ window.TutorialModal = React.memo(({ show, onClose }) => {
         {
             target: "#remaining-area h3", // 수강 예정 패널 제목
             title: "놓친 과목은 없는지? 🔭",
-            content: "졸업을 위해 앞으로 수강해야 할 과목들이 이곳에 자동으로 정리됩니다.\n\n이 패널을 클릭하면 전체 화면으로 상세 목록을 확인할 수 있습니다.",
+            content: "졸업을 위해 앞으로 수강해야 할 과목들이 이곳에 자동으로 정리됩니다.\n\n이 패널을 클릭하면 전체 화면으로 상세 목록을 확인하고 학기별 이수 계획을 세울 수 있습니다.",
             position: "left"
         },
         {
@@ -327,7 +336,6 @@ window.TutorialModal = React.memo(({ show, onClose }) => {
         }
     ];
 
-    // 타겟 요소 위치 계산 함수
     const updateTargetRect = useCallback(() => {
         if (!show) return;
         const currentTargetSelector = steps[step].target;
@@ -335,10 +343,7 @@ window.TutorialModal = React.memo(({ show, onClose }) => {
         if (currentTargetSelector) {
             const el = document.querySelector(currentTargetSelector);
             if (el) {
-                // 요소가 화면에 보이도록 스크롤
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                
-                // 스크롤 이동 시간을 고려하여 약간 지연 후 좌표 계산
                 setTimeout(() => {
                     const rect = el.getBoundingClientRect();
                     setTargetRect({
@@ -351,7 +356,7 @@ window.TutorialModal = React.memo(({ show, onClose }) => {
                     });
                 }, 400);
             } else {
-                setTargetRect(null); // 요소를 못 찾으면 중앙 팝업으로 표시
+                setTargetRect(null); 
             }
         } else {
             setTargetRect(null);
@@ -405,7 +410,6 @@ window.TutorialModal = React.memo(({ show, onClose }) => {
     const currentStep = steps[step];
     const isTargetMode = !!targetRect;
 
-    // 말풍선 위치 스타일 계산
     const getTooltipStyle = () => {
         if (!targetRect) return {};
         const spacing = 20; 
@@ -438,7 +442,6 @@ window.TutorialModal = React.memo(({ show, onClose }) => {
 
         const safePadding = 20;
         
-        // 가로축 화면 이탈 방지
         if (transform && transform.includes('translateX(-50%)')) {
             const minX = tooltipWidth / 2 + safePadding;
             const maxX = window.innerWidth - (tooltipWidth / 2) - safePadding;
@@ -447,7 +450,6 @@ window.TutorialModal = React.memo(({ show, onClose }) => {
             left = Math.max(safePadding, Math.min(left, window.innerWidth - tooltipWidth - safePadding));
         }
 
-        // 세로축 화면 이탈 방지
         const maxTop = window.innerHeight - tooltipHeight - safePadding;
         if (top > maxTop) top = maxTop;
         
@@ -481,7 +483,7 @@ window.TutorialModal = React.memo(({ show, onClose }) => {
                 className={`absolute transition-all duration-300 ease-out flex flex-col items-center ${isTargetMode ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
                 style={isTargetMode ? getTooltipStyle() : {}}
             >
-                <div className={`bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-2xl border-2 border-indigo-100 dark:border-slate-600 font-bold relative animate-slide-up max-w-sm w-[90vw] md:w-[24rem]`}>
+                <div className={`bg-white dark:bg-slate-800 p-6 rounded-[2rem] shadow-2xl border-2 border-indigo-100 dark:border-slate-600 font-bold relative animate-slide-up max-w-sm w-[90vw] md:w-[24rem]`}>
                     <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-2">
                             <div className="flex gap-1">
@@ -530,7 +532,6 @@ window.MajorElectiveModal = React.memo(({ show, onClose, currentItems, onUpdate 
 
     useEffect(() => {
         if (show) {
-            // 현재 리스트에 있는 전공선택 과목들만 체크
             const currentNames = currentItems.map(i => i.name);
             const initialSelected = PHYSICS_ELECTIVES.filter(name => currentNames.includes(name));
             setSelected(initialSelected);
@@ -553,7 +554,7 @@ window.MajorElectiveModal = React.memo(({ show, onClose, currentItems, onUpdate 
 
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in">
-            <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold max-h-[80vh] flex flex-col">
+            <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 md:p-8 max-w-lg w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold max-h-[85vh] flex flex-col">
                 <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-50 dark:border-slate-700 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="bg-indigo-50 dark:bg-indigo-900/30 p-2.5 rounded-full text-indigo-600 dark:text-indigo-400">
@@ -571,7 +572,7 @@ window.MajorElectiveModal = React.memo(({ show, onClose, currentItems, onUpdate 
                                 <div 
                                     key={subject}
                                     onClick={() => handleToggle(subject)}
-                                    className={`p-4 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${isChecked ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800' : 'bg-white dark:bg-slate-700 border-slate-100 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600'}`}
+                                    className={`p-4 rounded-xl border flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] ${isChecked ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800' : 'bg-white dark:bg-slate-700 border-slate-100 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600'}`}
                                 >
                                     <span className={`text-sm font-bold ${isChecked ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300'}`}>
                                         {subject}
@@ -586,11 +587,11 @@ window.MajorElectiveModal = React.memo(({ show, onClose, currentItems, onUpdate 
                 </div>
 
                 <div className="mt-6 pt-2 shrink-0 flex gap-3">
-                    <button onClick={onClose} className="flex-1 py-3 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors font-bold">
+                    <button onClick={onClose} className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-2xl transition-colors font-bold text-sm">
                         취소
                     </button>
-                    <button onClick={handleSave} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 font-black">
-                        적용하기 ({selected.length})
+                    <button onClick={handleSave} className="flex-[2] py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 font-black text-sm">
+                        적용 ({selected.length})
                     </button>
                 </div>
             </div>
@@ -618,8 +619,8 @@ window.SecondMajorModal = React.memo(({ show, onClose, config, onUpdate }) => {
     if (!show) return null;
 
     return (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in">
-            <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animation-fade-in overflow-y-auto">
+            <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-700 font-bold my-auto">
                 <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-50 dark:border-slate-700">
                     <div className="bg-indigo-50 dark:bg-indigo-900/30 p-2.5 rounded-full text-indigo-600 dark:text-indigo-400">
                         <Icons.Layers />
@@ -627,7 +628,7 @@ window.SecondMajorModal = React.memo(({ show, onClose, config, onUpdate }) => {
                     <h3 className="text-xl font-black text-slate-800 dark:text-slate-100">전공 과정 설정</h3>
                 </div>
 
-                <div className="space-y-5">
+                <div className="space-y-6">
                     <div>
                         <label className="block text-xs text-slate-400 mb-2 ml-1">이수 과정 선택</label>
                         <div className="grid grid-cols-3 gap-2">
@@ -639,7 +640,7 @@ window.SecondMajorModal = React.memo(({ show, onClose, config, onUpdate }) => {
                                 <button
                                     key={opt.val}
                                     onClick={() => setType(opt.val)}
-                                    className={`py-3 rounded-xl text-sm font-black transition-all ${type === opt.val ? 'bg-indigo-600 text-white shadow-lg scale-105' : 'bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600'}`}
+                                    className={`py-3.5 rounded-xl text-sm font-black transition-all ${type === opt.val ? 'bg-indigo-600 text-white shadow-lg scale-105' : 'bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600'}`}
                                 >
                                     {opt.label}
                                 </button>
@@ -654,7 +655,7 @@ window.SecondMajorModal = React.memo(({ show, onClose, config, onUpdate }) => {
                                 type="text" 
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 dark:text-white font-bold placeholder:font-normal"
+                                className="w-full p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-800 dark:text-white font-bold placeholder:font-normal placeholder:text-slate-400"
                                 placeholder="예: 수학교육과, 컴퓨터공학부"
                             />
                         </div>
@@ -665,10 +666,10 @@ window.SecondMajorModal = React.memo(({ show, onClose, config, onUpdate }) => {
                     </div>
 
                     <div className="flex gap-3 pt-2">
-                        <button onClick={onClose} className="flex-1 py-3.5 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors font-bold">
+                        <button onClick={onClose} className="flex-1 py-3.5 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-colors font-bold text-sm">
                             취소
                         </button>
-                        <button onClick={handleSave} className="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 font-black">
+                        <button onClick={handleSave} className="flex-[2] py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg transition-all active:scale-95 font-black text-sm">
                             확인
                         </button>
                     </div>

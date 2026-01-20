@@ -62,10 +62,12 @@ window.BASE_DATA = {
         { id: 'p_sel1', name: '[교과교육 선택 1]', completed: false, credits: 0, fixed: true, lockCredits: true, selectable: true, lockDelete: true },
         { id: 'p_sel2', name: '[교과교육 선택 2]', completed: false, credits: 0, fixed: true, lockCredits: true, selectable: true, lockDelete: true }
     ]},
-    indEng: { title: "제2전공", target: 0, items: [] },
-    shared: { title: "중복 인정 과목", target: 0, items: [] },
+    // [수정] 제2전공에 mandatoryCompleted 플래그 추가
+    indEng: { title: "제2전공", target: 0, items: [], mandatoryCompleted: false },
+    shared: { title: "중복 인정 과목", target: 0, items: [] }, // 유지하되 UI에서 숨김 처리 예정
     etcGrad: { title: "기타 졸업 요건", target: 0, dragDisabled: true, items: [] },
-    elective: { title: "일반 선택", target: 0, items: [] }
+    elective: { title: "일반 선택", target: 0, items: [] },
+    planner: [] 
 };
 
 window.getGeneralDataByYear = (year) => {
@@ -227,6 +229,8 @@ window.getEtcGradDataByYear = (year) => {
     ];
 };
 
+// data.js 파일 하단 부분 수정
+
 window.calculateStats = (data, config) => {
     const dynamicTargets = (() => {
         const { studentYear, majorPath } = config;
@@ -248,41 +252,99 @@ window.calculateStats = (data, config) => {
 
     const res = {};
     let totalGradEarned = 0;
-    const sharedEarned = data.shared.items.filter(i => i.completed).reduce((a, c) => a + (Number(c.credits) || 0), 0);
+
+    // 제2전공 내 중복 인정 과목(isShared) 학점 합계 계산
+    const oldSharedEarned = data.shared.items.filter(i => i.completed).reduce((a, c) => a + (Number(c.credits) || 0), 0);
+    const indEngSharedEarned = data.indEng.items.filter(i => !i.hidden && i.completed && i.isShared).reduce((a, c) => a + (Number(c.credits) || 0), 0);
+    const totalSharedEarnedForPhysics = oldSharedEarned + indEngSharedEarned;
+
     const electiveEarned = data.elective.items.filter(i => i.completed).reduce((a, c) => a + (Number(c.credits) || 0), 0);
     
     Object.keys(data).forEach(k => {
+        if (k === 'planner') return; 
+
         const target = dynamicTargets[k] || 0;
         let earned = data[k].items.filter(i => !i.hidden && (i.completed || (i.multi && i.checks?.every(c => c)))).reduce((a, c) => a + (Number(c.credits) || 0), 0);
-        if (k === 'physics' || k === 'indEng') earned += sharedEarned;
-        if (['general', 'teaching'].includes(k)) totalGradEarned += earned;
-        else if (['physics', 'indEng'].includes(k)) totalGradEarned += data[k].items.filter(i => !i.hidden && i.completed).reduce((a, c) => a + (Number(c.credits) || 0), 0);
         
-        const visibleItems = data[k].items.filter(i => !i.hidden);
+        // [수정] 필수 과목 미이수 여부 체크
+        let missingMandatory = false;
+        if (k === 'general' || k === 'physics') {
+            missingMandatory = data[k].items.some(i => i.fixed && !i.completed && !i.hidden);
+        } else if (k === 'indEng') {
+             if (config.majorPath !== 'single') {
+                 missingMandatory = !data.indEng.mandatoryCompleted;
+             }
+        }
+
+        // [수정] 권장 과목 미이수 여부 체크
+        // 1. 권장으로 체크된 과목이 미이수 상태인 경우
+        // 2. 권장 지원 과목이 존재하는데, 아무것도 권장으로 체크하지 않은 경우 (신규: 사용자 요청 반영)
+        let missingRecommended = false;
+        if (k === 'general') {
+             const recommendedCandidates = data[k].items.filter(i => i.recommendedSupport);
+             if (recommendedCandidates.length > 0) {
+                 const hasChecked = recommendedCandidates.some(i => i.isRecommended);
+                 // 체크한 것 중 완료되지 않은 것이 있거나, 아예 체크를 안 했거나
+                 missingRecommended = data[k].items.some(i => i.recommendedSupport && i.isRecommended && !i.completed) || !hasChecked;
+             }
+        }
+
+        if (k === 'physics') earned += totalSharedEarnedForPhysics;
+        
+        // 전체 졸업 학점 계산
+        if (['general', 'teaching'].includes(k)) {
+            totalGradEarned += earned;
+        } else if (k === 'physics') {
+            totalGradEarned += data.physics.items.filter(i => !i.hidden && i.completed).reduce((a, c) => a + (Number(c.credits) || 0), 0);
+        } else if (k === 'indEng') {
+            totalGradEarned += data.indEng.items.filter(i => !i.hidden && i.completed).reduce((a, c) => a + (Number(c.credits) || 0), 0);
+        }
+        
+        // [수정] 완료 조건: 학점 충족 AND 필수 미이수 없음 AND 권장 미이수 없음
+        // UI 표시는 Dashboard에서 별도로 처리(학점 부족시 ING, 학점 충족시 미이수 경고)하지만, 데이터 상으로는 완료가 아님을 표시
+        const isComplete = (earned >= target) && !missingMandatory && !missingRecommended;
+
+        const isEtcComplete = k === 'etcGrad' ? (data[k].items.length > 0 && data[k].items.every(i => i.completed || (i.multi && i.checks?.every(c => c)))) : isComplete;
+
         res[k] = { 
             earned, 
             target, 
-            isComplete: k === 'etcGrad' ? (visibleItems.length > 0 && visibleItems.every(i => i.completed || (i.multi && i.checks?.every(c => c)))) : earned >= target, 
-            percent: target > 0 ? Math.min(100, Math.round((earned / target) * 100)) : (visibleItems.length > 0 ? Math.round((visibleItems.filter(i => i.completed || (i.multi && i.checks?.every(c => c))).length / visibleItems.length) * 100) : 0) 
+            isComplete: k === 'etcGrad' ? isEtcComplete : isComplete, 
+            percent: target > 0 ? Math.min(100, Math.round((earned / target) * 100)) : (data[k].items.length > 0 ? Math.round((data[k].items.filter(i => i.completed || (i.multi && i.checks?.every(c => c))).length / data[k].items.length) * 100) : 0),
+            missingMandatory, 
+            missingRecommended 
         };
     });
-    const finalOverall = totalGradEarned + sharedEarned + electiveEarned;
-    res.overall = { earned: finalOverall, target: 130, percent: Math.min(100, Math.round((finalOverall / 130) * 100)) };
-    res.general.isRecommendedMissing = !data.general.items.some(i => i.recommendedSupport && i.isRecommended);
+
+    totalGradEarned += oldSharedEarned;
+    totalGradEarned += electiveEarned;
+
+    res.overall = { earned: totalGradEarned, target: 130, percent: Math.min(100, Math.round((totalGradEarned / 130) * 100)) };
+    res.general.isRecommendedMissing = res.general.missingRecommended; 
     return res;
 };
 
+// ... (calculateRemaining, getInitialGuestData 함수는 기존과 동일) ...
 window.calculateRemaining = (data, config) => {
-    const list = Object.keys(data).flatMap(k => data[k].items.filter(i => !i.hidden && (i.multi ? !i.checks?.every(c => c) : !i.completed)).map(i => {
-        let nameStr = i.name;
-        if (i.type === 'foreign1' || i.type === 'foreign2') nameStr = i.subName === '면제' || i.subName === '제2외국어' || (i.type === 'foreign2' && i.subName === '') ? `외국어: ${i.subName} ${i.name ? `(${i.name})` : ''}` : `외국어: ${i.subName || i.name}`;
-        if (i.type === 'msSet') nameStr = `${i.name}: ${i.subName}`;
-        if (i.type === 'core' || i.type === 'coreFixed' || i.type === 'pe' || i.type === 'computer' || i.type === 'veritas' || i.type === 'keys') nameStr = `${i.prefix}: ${i.name}`;
-        // [신규] 전공선택 트리거는 표시 제외
-        if (i.type === 'majorElectiveTrigger') return null;
+    const list = Object.keys(data).flatMap(k => {
+        if (k === 'planner') return [];
 
-        return { ...i, displayName: nameStr, catTitle: k === 'indEng' ? `${config.secondMajorTitle} (제2전공)` : data[k].title, catKey: k };
-    })).filter(Boolean); // filter null
+        return data[k].items.filter(i => !i.completed && !i.hidden).map(i => {
+            let nameStr = i.name;
+            if (i.subName) nameStr = `${i.name}: ${i.subName}`;
+            if (i.type === 'core' || i.type === 'coreFixed' || i.type === 'pe' || i.type === 'computer' || i.type === 'veritas' || i.type === 'keys') nameStr = `${i.prefix}: ${i.name}`;
+            
+            if (i.type === 'majorElectiveTrigger') return null;
+
+            return { 
+                ...i, 
+                displayName: nameStr, 
+                catTitle: k === 'indEng' ? `${config.secondMajorTitle || '제2전공'} (${config.majorPath === 'double' ? '복수전공' : '부전공'})` : data[k].title, 
+                catKey: k 
+            };
+        });
+    }).filter(Boolean);
+
     return config.majorPath === 'single' ? list.filter(i => i.catKey !== 'indEng' && i.catKey !== 'shared') : list;
 };
 
@@ -296,7 +358,6 @@ window.getInitialGuestData = (year) => {
         const teachItems = window.getTeachingDataByYear(year);
         if (teachItems.length > 0) initialData.teaching.items = teachItems;
     }
-    // [변경] 물리교육과 데이터 초기화 호출
     if (window.getPhysicsDataByYear) {
         const phyItems = window.getPhysicsDataByYear(year);
         if (phyItems.length > 0) initialData.physics.items = phyItems;

@@ -313,58 +313,69 @@ window.AuthScreen = React.memo(({ onLoginSuccess, onGuestLogin, guestData, guest
         setGuestName("");
     }, [isSaveId]);
 
+    // 입력 필드 공통 스타일
+    const inputContainerStyle = "w-full bg-slate-50 dark:bg-slate-700/50 rounded-2xl border border-transparent focus-within:border-indigo-300 dark:focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900/30 transition-all duration-200 overflow-hidden";
+    const inputStyle = "w-full p-4 bg-transparent outline-none text-base font-bold text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal";
+    const labelStyle = "block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 ml-1";
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-white md:bg-slate-100 dark:bg-slate-900 p-0 md:p-4 transition-colors duration-300">
             <AlertModal show={authModal.show} message={authModal.message} onConfirm={authModal.onConfirm} level="info" />
 
-            <div className="bg-white p-8 rounded-[2rem] shadow-xl w-full max-w-md border border-slate-100 transition-all relative">
+            {/* 카드 컨테이너: 모바일에서는 전체화면(shadow/border 제거), PC에서는 카드 형태 */}
+            <div className="bg-white dark:bg-slate-800 w-full max-w-md p-6 md:p-10 md:rounded-[2.5rem] md:shadow-2xl md:border border-slate-100 dark:border-slate-700 transition-all relative flex flex-col justify-center min-h-screen md:min-h-0">
+                
                 {guestConfig && (
-                    <button onClick={onCancel} className="absolute top-8 right-8 text-slate-400 hover:text-indigo-600 transition-colors">
+                    <button onClick={onCancel} className="absolute top-6 right-6 md:top-8 md:right-8 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors p-2">
                         <span className="text-xs font-bold">취소</span>
                     </button>
                 )}
 
-                <div className="flex justify-center mb-6">
-                    <div className={`p-4 rounded-full ${view === 'guest' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
-                        {view === 'reset' ? <Icons.Zap /> : view === 'guest' ? <Icons.User /> : <Icons.Cap />}
+                <div className="flex flex-col items-center mb-8">
+                    <div className={`p-5 rounded-2xl md:rounded-3xl mb-6 shadow-lg ${view === 'guest' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500' : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'}`}>
+                        {view === 'reset' ? <Icons.Zap className="w-8 h-8 md:w-10 md:h-10" /> : view === 'guest' ? <Icons.User /> : <Icons.Cap />}
                     </div>
+                    <h2 className={`text-2xl md:text-3xl font-black text-center tracking-tight ${view === 'guest' ? 'text-emerald-900 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
+                        {getTitle()}
+                    </h2>
+                    {view === 'reset' && !message && (
+                        <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-2 px-4 leading-relaxed">
+                            가입하신 <strong>학번</strong>과 <strong>아이디(이메일)</strong>를 입력하시면<br/>재설정 링크를 보내드립니다.
+                        </p>
+                    )}
                 </div>
                 
-                <h2 className={`text-2xl font-black mb-2 text-center ${view === 'guest' ? 'text-emerald-900' : 'text-indigo-900'}`}>{getTitle()}</h2>
-                
-                {view === 'reset' && !message && (
-                    <p className="text-sm text-slate-500 text-center mb-4 px-4">가입하신 <strong>학번</strong>과 <strong>아이디(이메일)</strong>를 입력하시면<br/>재설정 링크를 보내드립니다.</p>
-                )}
-
                 {view === 'guest' ? (
-                    <form onSubmit={handleGuestLogin} className="space-y-4 font-bold">
+                    <form onSubmit={handleGuestLogin} className="space-y-5 animate-fade-in">
                         <div>
-                            <label className="block text-xs text-slate-400 mb-1 ml-1">이름</label>
-                            <input type="text" value={guestName} onChange={e=>setGuestName(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-100" placeholder="이름 (또는 닉네임)" required />
+                            <label className={labelStyle}>이름</label>
+                            <div className={inputContainerStyle}>
+                                <input type="text" value={guestName} onChange={e=>setGuestName(e.target.value)} className={inputStyle} placeholder="이름 (또는 닉네임)" required />
+                            </div>
                         </div>
                         <div>
-                            <label className="block text-xs text-slate-400 mb-1 ml-1">입학 연도 (학번)</label>
-                            <div className="relative">
-                                <select value={guestYear} onChange={e=>setGuestYear(parseInt(e.target.value))} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-100 appearance-none font-bold text-slate-700 cursor-pointer">
+                            <label className={labelStyle}>입학 연도 (학번)</label>
+                            <div className={`${inputContainerStyle} relative`}>
+                                <select value={guestYear} onChange={e=>setGuestYear(parseInt(e.target.value))} className={`${inputStyle} appearance-none cursor-pointer`}>
                                     {AVAILABLE_YEARS.map(y => <option key={y} value={y % 100}>{y % 100}학번</option>)}
                                 </select>
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                    <Icons.ChevronDown />
                                 </div>
                             </div>
                         </div>
-                        {error && <div className="text-red-500 text-sm text-center font-black bg-red-50 p-2 rounded-lg">{error}</div>}
-                        <button type="submit" disabled={loading} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+                        {error && <div className="text-red-500 dark:text-red-400 text-sm text-center font-black bg-red-50 dark:bg-red-900/20 p-3 rounded-xl animate-pulse">{error}</div>}
+                        <button type="submit" disabled={loading} className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black shadow-lg shadow-emerald-200 dark:shadow-none transition-all active:scale-[0.98] disabled:opacity-50 disabled:scale-100 text-lg">
                             {loading ? "시작하는 중..." : "게스트로 시작하기"}
                         </button>
                     </form>
                 ) : (
-                    <form onSubmit={handleAuth} className="space-y-4 font-bold">
+                    <form onSubmit={handleAuth} className="space-y-5 animate-fade-in">
                         <div>
-                            <label className="block text-xs text-slate-400 mb-1 ml-1">학번</label>
+                            <label className={labelStyle}>학번</label>
                             {guestConfig ? (
-                                <div className={`flex items-center w-full px-4 py-4 rounded-2xl transition-colors border border-transparent ${idError ? 'bg-red-50 ring-2 ring-red-200' : 'bg-slate-50 focus-within:ring-2 focus-within:ring-indigo-100'}`}>
-                                    <span className="text-slate-500 font-bold mr-1 shrink-0 select-none">{fixedYearPrefix}</span>
+                                <div className={`${inputContainerStyle} flex items-center ${idError ? 'bg-red-50 dark:bg-red-900/10 ring-red-200 dark:ring-red-900/30' : ''}`}>
+                                    <span className="text-slate-500 dark:text-slate-400 font-bold ml-4 shrink-0 select-none">{fixedYearPrefix}</span>
                                     <input 
                                         type="text" 
                                         value={idSuffix} 
@@ -373,96 +384,120 @@ window.AuthScreen = React.memo(({ onLoginSuccess, onGuestLogin, guestData, guest
                                             if(val.length <= 5) setIdSuffix(val);
                                         }} 
                                         onBlur={handleIdBlur} 
-                                        className="bg-transparent outline-none flex-1 w-full min-w-0 font-bold text-slate-800 placeholder:text-slate-300 placeholder:font-normal" 
+                                        className={inputStyle} 
                                         placeholder="12345" 
                                         required 
+                                        inputMode="numeric"
                                     />
                                 </div>
                             ) : (
-                                <div className="relative">
-                                    <input type="text" value={studentId} onChange={e=>setStudentId(e.target.value)} onBlur={handleIdBlur} className={`w-full p-4 rounded-2xl outline-none focus:ring-2 transition-colors ${idError ? 'bg-red-50 focus:ring-red-200' : 'bg-slate-50 focus:ring-indigo-100'}`} placeholder="예: 2024-12345" required />
+                                <div className={inputContainerStyle}>
+                                    <input 
+                                        type="text" 
+                                        value={studentId} 
+                                        onChange={e=>setStudentId(e.target.value)} 
+                                        onBlur={handleIdBlur} 
+                                        className={`${inputStyle} ${idError ? 'text-red-500' : ''}`}
+                                        placeholder="예: 2024-12345" 
+                                        required 
+                                    />
                                 </div>
                             )}
                             
-                            {idError ? <p className="text-[10px] text-red-500 mt-1 ml-1 font-black">{idError}</p> : (view === 'register' && !guestConfig) && <p className="text-[10px] text-slate-400 mt-1 ml-1">* {AVAILABLE_YEARS[0]}~{AVAILABLE_YEARS[AVAILABLE_YEARS.length-1]}학번만 가입 가능</p>}
+                            {idError ? <p className="text-xs text-red-500 dark:text-red-400 mt-1.5 ml-1 font-bold">{idError}</p> : (view === 'register' && !guestConfig) && <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 ml-1 font-medium">* {AVAILABLE_YEARS[0]}~{AVAILABLE_YEARS[AVAILABLE_YEARS.length-1]}학번만 가입 가능</p>}
                         </div>
 
                         {(view === 'register' || view === 'reset') && (
                             <div>
-                                <label className="block text-xs text-slate-400 mb-1 ml-1">{studentId === 'admin' ? '관리자 이메일' : '마이스누 아이디 (mySNU)'}</label>
-                                <div className={`flex items-center w-full px-4 py-4 rounded-2xl transition-colors border border-transparent ${emailError ? 'bg-red-50 ring-2 ring-red-200' : 'bg-slate-50 focus-within:ring-2 focus-within:ring-indigo-100'}`}>
-                                    <div className="text-slate-400 mr-3 pointer-events-none shrink-0"><Icons.Mail /></div>
+                                <label className={labelStyle}>{studentId === 'admin' ? '관리자 이메일' : '마이스누 아이디 (mySNU)'}</label>
+                                <div className={`${inputContainerStyle} flex items-center ${emailError ? 'bg-red-50 dark:bg-red-900/10 ring-red-200 dark:ring-red-900/30' : ''}`}>
+                                    <div className="pl-4 text-slate-400 dark:text-slate-500"><Icons.Mail /></div>
                                     <input 
                                         type={studentId === 'admin' ? "email" : "text"} 
                                         value={emailId} 
                                         onChange={e=>setEmailId(e.target.value)} 
                                         onBlur={handleEmailBlur} 
-                                        className="bg-transparent outline-none flex-1 w-full min-w-0 font-bold text-slate-800 placeholder:text-slate-300 placeholder:font-normal" 
-                                        placeholder={studentId === 'admin' ? "이메일 전체 입력 (예: admin@naver.com)" : "아이디 입력"} 
+                                        className={inputStyle} 
+                                        placeholder={studentId === 'admin' ? "이메일 전체 입력" : "아이디 입력"} 
                                         required 
                                     />
-                                    {studentId !== 'admin' && <span className="text-slate-500 font-bold ml-1 shrink-0">@snu.ac.kr</span>}
+                                    {studentId !== 'admin' && <span className="text-slate-500 dark:text-slate-400 font-bold mr-4 shrink-0">@snu.ac.kr</span>}
                                 </div>
-                                {emailError && <p className="text-[10px] text-red-500 mt-1 ml-1 font-black">{emailError}</p>}
+                                {emailError && <p className="text-xs text-red-500 dark:text-red-400 mt-1.5 ml-1 font-bold">{emailError}</p>}
                             </div>
                         )}
                         {view === 'register' && (
                             <div>
-                                <label className="block text-xs text-slate-400 mb-1 ml-1">이름</label>
-                                <input type="text" value={name} onChange={e=>setName(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-100" placeholder="본명" required />
+                                <label className={labelStyle}>이름</label>
+                                <div className={inputContainerStyle}>
+                                    <input type="text" value={name} onChange={e=>setName(e.target.value)} className={inputStyle} placeholder="본명" required />
+                                </div>
                             </div>
                         )}
                         {view !== 'reset' && (
                             <div>
-                                <label className="block text-xs text-slate-400 mb-1 ml-1">비밀번호</label>
-                                <input type="password" value={pw} onChange={e=>setPw(e.target.value)} onBlur={handlePwBlur} className={`w-full p-4 rounded-2xl outline-none focus:ring-2 transition-colors ${pwError ? 'bg-red-50 focus:ring-red-200' : 'bg-slate-50 focus:ring-indigo-100'}`} placeholder="6자리 이상" required />
-                                {pwError && <p className="text-[10px] text-red-500 mt-1 ml-1 font-black">{pwError}</p>}
+                                <label className={labelStyle}>비밀번호</label>
+                                <div className={`${inputContainerStyle} ${pwError ? 'bg-red-50 dark:bg-red-900/10 ring-red-200 dark:ring-red-900/30' : ''}`}>
+                                    <input type="password" value={pw} onChange={e=>setPw(e.target.value)} onBlur={handlePwBlur} className={inputStyle} placeholder="6자리 이상" required />
+                                </div>
+                                {pwError && <p className="text-xs text-red-500 dark:text-red-400 mt-1.5 ml-1 font-bold">{pwError}</p>}
                             </div>
                         )}
                         {view === 'register' && (
                             <div>
-                                <label className="block text-xs text-slate-400 mb-1 ml-1">비밀번호 확인</label>
-                                <input type="password" value={confirmPw} onChange={e=>setConfirmPw(e.target.value)} className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ${confirmPw && pw !== confirmPw ? 'focus:ring-red-200 bg-red-50' : 'focus:ring-indigo-100 bg-slate-50'}`} placeholder="비밀번호 다시 입력" required />
-                                {confirmPw && pw !== confirmPw && <p className="text-[10px] text-red-500 mt-1 ml-1 font-black">비밀번호가 일치하지 않습니다.</p>}
+                                <label className={labelStyle}>비밀번호 확인</label>
+                                <div className={`${inputContainerStyle} ${confirmPw && pw !== confirmPw ? 'bg-red-50 dark:bg-red-900/10 ring-red-200 dark:ring-red-900/30' : ''}`}>
+                                    <input type="password" value={confirmPw} onChange={e=>setConfirmPw(e.target.value)} className={inputStyle} placeholder="비밀번호 다시 입력" required />
+                                </div>
+                                {confirmPw && pw !== confirmPw && <p className="text-xs text-red-500 dark:text-red-400 mt-1.5 ml-1 font-bold">비밀번호가 일치하지 않습니다.</p>}
                             </div>
                         )}
+                        
                         {view === 'login' && (
-                            <div className="flex items-center justify-between px-1">
+                            <div className="flex items-center justify-between px-1 pt-1">
                                 <div className="flex items-center gap-4">
                                     <label className="flex items-center cursor-pointer group">
-                                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isAutoLogin ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 group-hover:border-indigo-400'}`}>
-                                            {isAutoLogin && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>}
+                                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-200 ${isAutoLogin ? 'bg-indigo-600 border-indigo-600 dark:bg-indigo-500 dark:border-indigo-500' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 group-hover:border-indigo-400'}`}>
+                                            <svg className={`w-3.5 h-3.5 text-white transform transition-transform ${isAutoLogin ? 'scale-100' : 'scale-0'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                                         </div>
                                         <input type="checkbox" checked={isAutoLogin} onChange={e => setIsAutoLogin(e.target.checked)} className="hidden" />
-                                        <span className={`text-xs ml-2 font-bold ${isAutoLogin ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`}>자동 로그인</span>
+                                        <span className={`text-xs ml-2 font-bold transition-colors ${isAutoLogin ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-indigo-500'}`}>자동 로그인</span>
                                     </label>
                                     <label className="flex items-center cursor-pointer group">
-                                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSaveId ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 group-hover:border-indigo-400'}`}>
-                                            {isSaveId && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>}
+                                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-200 ${isSaveId ? 'bg-indigo-600 border-indigo-600 dark:bg-indigo-500 dark:border-indigo-500' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 group-hover:border-indigo-400'}`}>
+                                            <svg className={`w-3.5 h-3.5 text-white transform transition-transform ${isSaveId ? 'scale-100' : 'scale-0'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                                         </div>
                                         <input type="checkbox" checked={isSaveId} onChange={e => setIsSaveId(e.target.checked)} className="hidden" />
-                                        <span className={`text-xs ml-2 font-bold ${isSaveId ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`}>아이디 저장</span>
+                                        <span className={`text-xs ml-2 font-bold transition-colors ${isSaveId ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-indigo-500'}`}>아이디 저장</span>
                                     </label>
                                 </div>
-                                <button type="button" onClick={() => switchView('reset')} className="text-xs text-slate-400 hover:text-indigo-500 font-bold">비밀번호 찾기</button>
+                                <button type="button" onClick={() => switchView('reset')} className="text-xs text-slate-400 dark:text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 font-bold transition-colors">비밀번호 찾기</button>
                             </div>
                         )}
-                        {error && <div className="text-red-500 text-sm text-center font-black bg-red-50 p-2 rounded-lg">{error}</div>}
-                        {message && <div className="text-green-600 text-sm text-center font-black bg-green-50 p-3 rounded-lg whitespace-pre-wrap leading-relaxed">{message}</div>}
-                        <button type="submit" disabled={loading || (view === 'reset' && !!message)} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                        
+                        {error && <div className="text-red-500 dark:text-red-400 text-sm text-center font-black bg-red-50 dark:bg-red-900/20 p-3 rounded-xl animate-pulse">{error}</div>}
+                        {message && <div className="text-green-600 dark:text-green-400 text-sm text-center font-black bg-green-50 dark:bg-green-900/20 p-3 rounded-xl whitespace-pre-wrap leading-relaxed animate-fade-in">{message}</div>}
+                        
+                        <button type="submit" disabled={loading || (view === 'reset' && !!message)} className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white rounded-2xl font-black shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-[0.98] disabled:opacity-50 disabled:scale-100 text-lg">
                             {loading ? "처리중..." : (view === 'login' ? "로그인" : view === 'register' ? "가입하기" : "재설정 이메일 보내기")}
                         </button>
                     </form>
                 )}
 
-                <div className="mt-6 text-center space-y-2">
+                <div className="mt-8 text-center space-y-3 pb-8 md:pb-0">
                     {!guestConfig && (view === 'login' ? (
-                        <div className="flex flex-col gap-2">
-                            <button onClick={() => switchView('register')} className="text-slate-400 text-sm font-bold hover:text-indigo-500 transition-colors">계정이 없으신가요? 회원가입</button>
-                            <button onClick={() => switchView('guest')} className="text-emerald-500 text-sm font-bold hover:text-emerald-600 transition-colors">로그인 없이 게스트로 시작하기</button>
+                        <div className="flex flex-col gap-3">
+                            <button onClick={() => switchView('register')} className="w-full py-3.5 rounded-2xl border-2 border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all text-sm">
+                                계정이 없으신가요? <span className="text-indigo-600 dark:text-indigo-400 font-black">회원가입</span>
+                            </button>
+                            <button onClick={() => switchView('guest')} className="text-emerald-500 dark:text-emerald-400 text-sm font-bold hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors p-2">
+                                로그인 없이 <span className="underline decoration-2 underline-offset-2">게스트로 시작하기</span>
+                            </button>
                         </div>
                     ) : (
-                        <button onClick={() => switchView('login')} className="text-slate-400 text-sm font-bold hover:text-indigo-500 transition-colors">로그인 화면으로 돌아가기</button>
+                        <button onClick={() => switchView('login')} className="text-slate-400 dark:text-slate-500 text-sm font-bold hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors p-2 flex items-center justify-center gap-1 mx-auto">
+                            <Icons.ArrowUp className="transform -rotate-90 w-4 h-4" /> 로그인 화면으로 돌아가기
+                        </button>
                     ))}
                 </div>
             </div>
